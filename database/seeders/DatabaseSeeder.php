@@ -12,6 +12,12 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        
+        $this->call([
+            LanguagesTableSeeder::class,
+            TimezonesTableSeeder::class,
+            SettingsTableSeeder::class, // TODO: remove at end
+            TribesTableSeeder::class,
+            UsersTableSeeder::class
+        ]);
     }
 }
