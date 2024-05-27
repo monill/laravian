@@ -21,3 +21,4 @@ yarn-error.log
 seeder.py
 migration.py
 controller.py
+/app/Models
