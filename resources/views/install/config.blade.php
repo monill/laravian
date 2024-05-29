@@ -116,13 +116,13 @@
                                             <div class="information-form-group col-sm-6">
                                                 <label for="minprotecttime">Min Beginners Protection:</label>
                                                 <select class="form-control" name="minprotecttime" id="minprotecttime">
-                                                    <option value="0" selected="selected">None</option>
+                                                    <option value="0">None</option>
                                                     <option value="1200">20 min</option>
                                                     <option value="1800">30 min</option>
                                                     <option value="3600">1 hour</option>
                                                     <option value="10800">3 hours</option>
                                                     <option value="21600">6 hours</option>
-                                                    <option value="43200">12 hours</option>
+                                                    <option value="43200" selected="selected">12 hours</option>
                                                     <option value="86400">1 day</option>
                                                     <option value="172800">2 days</option>
                                                     <option value="259200">3 days</option>
@@ -141,7 +141,7 @@
                                                     <option value="86400">1 day</option>
                                                     <option value="172800">2 days</option>
                                                     <option value="259200">3 days</option>
-                                                    <option value="604800">7 days</option>
+                                                    <option value="604800" selected="selected">7 days</option>
                                                     <option value="1209600">14 days</option>
                                                 </select>
                                             </div>
