@@ -60,10 +60,10 @@
                                         foreach ($folders as $key) {
                                             $folder_perm = checkFolderPerm($key);
                                             if ($folder_perm == true) {
-                                                tableRow(str_replace("../", "", $key)," Required Permission: 0775 ",1);
+                                                tableRow(str_replace("../", "", $key)," Required Permission: 0775 ", 1);
                                             } else {
                                                 $error += 1;
-                                                tableRow(str_replace("../", "", $key)," Required permission: 0775 ",0);
+                                                tableRow(str_replace("../", "", $key)," Required permission: 0775 ", 0);
                                             }
                                         }
                                         ?>
@@ -71,9 +71,9 @@
                                 </div>
                                 <div class="item text-right">
                                     @if ($error == 0)
-                                        <a class="theme-button choto" href="#">Next Step <i class="fa fa-angle-double-right"></i></a>
+                                        <a class="theme-button choto" href="{{ route('install.environment') }}">Next Step <i class="fa fa-angle-double-right"></i></a>
                                     @else
-                                        <a class="theme-button btn-warning choto" href="#">Re-Check <i class="fa fa-sync-alt"></i></a>
+                                        <a class="theme-button btn-warning choto" href="{{ route('install.permissions') }}">Re-Check <i class="fa fa-sync-alt"></i></a>
                                     @endif
                                 </div>
                             </div>
