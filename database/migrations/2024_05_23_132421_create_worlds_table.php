@@ -18,7 +18,7 @@ return new class extends Migration
             $table->integer('x');
             $table->integer('y');
             $table->boolean('is_occupied')->default(false);
-            $table->string('image', 25);
+            $table->string('image', 15);
         });
     }
 
