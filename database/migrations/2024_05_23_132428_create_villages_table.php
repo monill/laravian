@@ -12,7 +12,6 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('villages', function (Blueprint $table) {
-            $table->id();
             $table->unsignedBigInteger('world_id')->index();
             $table->unsignedBigInteger('user_id')->index();
 
