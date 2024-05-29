@@ -12,12 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('oases', function (Blueprint $table) {
-            $table->id();
             $table->unsignedBigInteger('world_id')->index();
             $table->unsignedBigInteger('user_id')->index();
 
             $table->tinyInteger('type');
-            $table->boolean('conquered')->default(0);
+            $table->boolean('is_conquered')->default(0);
 
             $table->integer('wood');
             $table->integer('iron');
