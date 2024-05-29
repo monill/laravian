@@ -68,8 +68,6 @@ return new class extends Migration
             $table->string('hash', 45);
             $table->boolean('hide')->default(true);
 
-            // $table->timestamps();
-
             $table->foreign('world_id')->references('id')->on('worlds');
             $table->foreign('user_id')->references('id')->on('users');
         });
