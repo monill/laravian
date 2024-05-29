@@ -308,10 +308,10 @@ class InstallController extends Controller
     protected function insertUsers($password)
     {
         $users = [
-            ['tribe_id' => 1, 'username' => 'Support', 'email' => 'support@laravian.com', 'password' => bcrypt($password), 'access' => 8, 'timestamp' => time(), 'desc1' => '[#support]', 'protect' => 0, 'quest' => 25],
-            ['tribe_id' => 5, 'username' => 'Natars', 'email' => 'natars@laravian.com', 'password' => bcrypt($password), 'access' => 8, 'timestamp' => time(), 'desc1' => '[#natars]', 'protect' => 0, 'quest' => 25, 'fquest' => 35],
-            ['tribe_id' => 4, 'username' => 'Nature', 'email' => 'nature@laravian.com', 'password' => bcrypt($password), 'access' => 2, 'timestamp' => time(), 'desc1' => '[#nature]', 'protect' => 0, 'quest' => 25],
-            ['tribe_id' => 5, 'username' => 'Multihunter', 'email' => 'multihunter@laravian.com', 'password' => bcrypt($password), 'access' => 9, 'timestamp' => time(), 'desc1' => '[#multihunter]', 'protect' => 0, 'quest' => 25],
+            ['tribe_id' => 1, 'timezone_id' => 1, 'language_id' => 49, 'username' => 'Support', 'email' => 'support@laravian.com', 'password' => bcrypt($password), 'access' => 8, 'timestamp' => time(), 'desc1' => '[#support]', 'protect' => 0, 'quest' => 25],
+            ['tribe_id' => 5, 'timezone_id' => 1, 'language_id' => 49, 'username' => 'Natars', 'email' => 'natars@laravian.com', 'password' => bcrypt($password), 'access' => 8, 'timestamp' => time(), 'desc1' => '[#natars]', 'protect' => 0, 'quest' => 25, 'fquest' => 35],
+            ['tribe_id' => 4, 'timezone_id' => 1, 'language_id' => 49, 'username' => 'Nature', 'email' => 'nature@laravian.com', 'password' => bcrypt($password), 'access' => 2, 'timestamp' => time(), 'desc1' => '[#nature]', 'protect' => 0, 'quest' => 25],
+            ['tribe_id' => 1, 'timezone_id' => 1, 'language_id' => 49, 'username' => 'Multihunter', 'email' => 'multihunter@laravian.com', 'password' => bcrypt($password), 'access' => 9, 'timestamp' => time(), 'desc1' => '[#multihunter]', 'protect' => 0, 'quest' => 25],
         ];
 
         foreach ($users as $user) {
@@ -497,6 +497,63 @@ class InstallController extends Controller
 
     public function completed()
     {
+        $outputLog = new BufferedOutput;
+
+        $this->generateKey($outputLog);
+        $this->publishVendorAssets($outputLog);
+        $this->runFinal();
+        $this->installed();
+
         return view('install/completed');
+    }
+
+    private function runFinal()
+    {
+        $outputLog = new BufferedOutput;
+
+        $this->generateKey($outputLog);
+        $this->publishVendorAssets($outputLog);
+
+        return $outputLog->fetch();
+    }
+
+    private function generateKey(BufferedOutput $outputLog)
+    {
+        try {
+            if (config('installer.final.key')) {
+                Artisan::call('key:generate', ['--force' => true], $outputLog);
+            }
+        } catch (Exception $e) {
+            return $this->response($e->getMessage(), 'error', $outputLog);
+        }
+        return $outputLog;
+    }
+
+    private function publishVendorAssets(BufferedOutput $outputLog)
+    {
+        try {
+            if (config('installer.final.publish')) {
+                Artisan::call('vendor:publish', ['--all' => true], $outputLog);
+            }
+        } catch (Exception $e) {
+            return $this->response($e->getMessage(), 'error', $outputLog);
+        }
+        return $outputLog;
+    }
+
+    public function installed()
+    {
+        $installedFile = storage_path('installed');
+
+        $dateStamp = date('Y/m/d h:i:sa');
+
+        if (!file_exists($installedFile)) {
+            $message = "Laravel Installer successfully INSTALLED on {$dateStamp} \n";
+            file_put_contents($installedFile, $message);
+        } else {
+            $message = "Laravel Installer successfully UPDATED on {$dateStamp}";
+            file_put_contents($installedFile, $message . PHP_EOL, FILE_APPEND | LOCK_EX);
+        }
+        return $message;
     }
 }
