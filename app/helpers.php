@@ -47,3 +47,9 @@ if (!function_exists('checkFolderPerm')) {
         return $perm >= '0775';
     }
 }
+
+if (!function_exists('setting')) {
+    function setting($name) {
+        return \Illuminate\Support\Facades\DB::table('settings')->where(['key' => $name])->first()->value;
+    }
+}
