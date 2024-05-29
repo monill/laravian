@@ -15,9 +15,9 @@ class DatabaseSeeder extends Seeder
         $this->call([
             LanguagesTableSeeder::class,
             TimezonesTableSeeder::class,
-            SettingsTableSeeder::class, // TODO: remove at end
+            //SettingsTableSeeder::class, // TODO: remove at end
             TribesTableSeeder::class,
-            UsersTableSeeder::class
+            //UsersTableSeeder::class
         ]);
     }
 }
