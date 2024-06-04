@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Game\DatabaseGame;
 use App\Http\Requests\InstallationRequest;
+use App\Models\Setting;
+use App\Models\User;
 use Exception;
 use Illuminate\Database\SQLiteConnection;
 use Illuminate\Http\Request;
@@ -135,7 +137,7 @@ class InstallController extends Controller
     public function databaseSave()
     {
         $results = $this->migrateAndSeed();
-        return redirect()->route('install.migration')->with(['message' => $results]);
+        return redirect()->route('install.migration')->with(['results' => $results]);
     }
 
     public function migration()
@@ -199,9 +201,7 @@ class InstallController extends Controller
     {
         $datas = $request->except(['_token']);
         foreach ($datas as $key => $value) {
-            DB::table('settings')->insert([
-                'key' => $key, 'value' => $value, 'created_at' => now(), 'updated_at' => now()
-            ]);
+            Setting::create(['key' => $key, 'value' => $value]);
         }
         return redirect('install/world');
     }
@@ -276,15 +276,14 @@ class InstallController extends Controller
 
         $this->insertUsers($password);
 
-        $worldid4 = $game->getWref(1, 0);
-        $this->setupVillages($worldid4, 4, 'Multihunter', 1, $game);
-        $worldid2 = $game->getWref(0, 0);
-        $this->setupVillages($worldid2, 2, '1', 0, $game);
+        $this->setupVillages($game->getWref(1, 0), 4, 'Multihunter', 1, $game);
+        $worldID2 = $game->getWref(0, 0);
+        $this->setupVillages($worldID2, 2, '1', 0, $game);
 
         $speed = setting('speed');
         $speed = $speed > 5 ? 5 : $speed;
 
-        $this->updateUnits($worldid2, $speed);
+        $this->updateUnits($worldID2, $speed);
 
         for ($i = 1; $i <= 13; $i++) {
             $nareadis = setting('natars_max');
@@ -294,12 +293,12 @@ class InstallController extends Controller
                 $y = rand(3, intval(floor($nareadis)));
                 if (rand(1, 10) > 5) $y = $y * -1;
                 $dis = sqrt(($x * $x) + ($y * $y));
-                $villageid = $game->getWref($x, $y);
-                $status = $game->getVillageState($villageid);
+                $worldID = $game->getWref($x, $y);
+                $status = $game->getVillageState($worldID);
             } while (($dis > $nareadis) || $status != 0);
 
-            $this->setupVillages($villageid, 2, 'Natars', 1, $game);
-            $this->updateNatars($villageid, $speed);
+            $this->setupVillages($worldID, 2, 'Natars', 1, $game);
+            $this->updateNatars($worldID, $speed);
         }
 
         return redirect('install/oasis');
@@ -308,14 +307,14 @@ class InstallController extends Controller
     protected function insertUsers($password)
     {
         $users = [
-            ['tribe_id' => 1, 'timezone_id' => 1, 'language_id' => 49, 'username' => 'Support', 'email' => 'support@laravian.com', 'password' => bcrypt($password), 'access' => 8, 'timestamp' => time(), 'desc1' => '[#support]', 'protect' => 0, 'quest' => 25],
-            ['tribe_id' => 5, 'timezone_id' => 1, 'language_id' => 49, 'username' => 'Natars', 'email' => 'natars@laravian.com', 'password' => bcrypt($password), 'access' => 8, 'timestamp' => time(), 'desc1' => '[#natars]', 'protect' => 0, 'quest' => 25, 'fquest' => 35],
-            ['tribe_id' => 4, 'timezone_id' => 1, 'language_id' => 49, 'username' => 'Nature', 'email' => 'nature@laravian.com', 'password' => bcrypt($password), 'access' => 2, 'timestamp' => time(), 'desc1' => '[#nature]', 'protect' => 0, 'quest' => 25],
-            ['tribe_id' => 1, 'timezone_id' => 1, 'language_id' => 49, 'username' => 'Multihunter', 'email' => 'multihunter@laravian.com', 'password' => bcrypt($password), 'access' => 9, 'timestamp' => time(), 'desc1' => '[#multihunter]', 'protect' => 0, 'quest' => 25],
+            ['tribe_id' => 1, 'timezone_id' => 1, 'language_id' => 49, 'username' => 'Support', 'email' => 'support@laravian.com', 'password' => bcrypt($password), 'access' => 8, 'desc1' => '[#support]', 'quest' => 25],
+            ['tribe_id' => 5, 'timezone_id' => 1, 'language_id' => 49, 'username' => 'Natars', 'email' => 'natars@laravian.com', 'password' => bcrypt($password), 'access' => 8, 'desc1' => '[#natars]', 'quest' => 25, 'fquest' => 35],
+            ['tribe_id' => 4, 'timezone_id' => 1, 'language_id' => 49, 'username' => 'Nature', 'email' => 'nature@laravian.com', 'password' => bcrypt($password), 'access' => 2, 'desc1' => '[#nature]', 'quest' => 25],
+            ['tribe_id' => 1, 'timezone_id' => 1, 'language_id' => 49, 'username' => 'Multihunter', 'email' => 'multihunter@laravian.com', 'password' => bcrypt($password), 'access' => 9, 'desc1' => '[#multihunter]', 'quest' => 25],
         ];
 
         foreach ($users as $user) {
-            DB::table('users')->insert($user);
+            User::create($user);
         }
     }
 
@@ -334,7 +333,8 @@ class InstallController extends Controller
 
     protected function updateUnits($worldID, $speed)
     {
-        $data = [
+        DB::table('villages')->where('world_id', $worldID)->update(['population' => 781]);
+        DB::table('units')->where('world_id', $worldID)->update([
             'u41' => (94700 * $speed),
             'u42' => (295231 * $speed),
             'u43' => (180747 * $speed),
@@ -345,20 +345,18 @@ class InstallController extends Controller
             'u48' => (1040 * $speed),
             'u49' => 1,
             'u50' => 9
-        ];
-        DB::table('villages')->where('world_id', $worldID)->update(['population' => 781]);
-        DB::table('units')->where('world_id', $worldID)->update($data);
+        ]);
     }
 
     protected function updateNatars($worldID, $speed)
     {
-        $vdata = [
+        DB::table('villages')->where('world_id', $worldID)->update([
             'population' => 238,
             'natar' => 1,
             'name' => 'WW Village',
             'is_capital' => 0
-        ];
-        $units = [
+        ]);
+        DB::table('units')->where('world_id', $worldID)->update([
             'u41' => (random_int(1000, 2000) * $speed),
             'u42' => (random_int(1500, 2000) * $speed),
             'u43' => (random_int(2300, 2800) * $speed),
@@ -369,14 +367,11 @@ class InstallController extends Controller
             'u48' => (random_int(100, 300) * $speed),
             'u49' => (random_int(1, 5) * $speed),
             'u50' => (random_int(1, 5) * $speed)
-        ];
-        $fdata = [
+        ]);
+        DB::table('fields')->where('world_id', $worldID)->update([
             'f22t' => 27, 'f22' => 10, 'f28t' => 25, 'f28' => 10, 'f19t' => 23, 'f19' => 10, 'f99t' => 40,
             'f26' => 0, 'f26t' => 0, 'f21' => 1, 'f21t' => 15, 'f39' => 1, 'f39t' => 16
-        ];
-        DB::table('villages')->where('world_id', $worldID)->update($vdata);
-        DB::table('units')->where('world_id', $worldID)->update($units);
-        DB::table('fields')->where('world_id', $worldID)->update($fdata);
+        ]);
     }
 
     public function oasis()
