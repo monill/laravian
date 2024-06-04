@@ -45,10 +45,10 @@ return new class extends Migration
             $table->boolean('natar')->default(0);
             $table->integer('starv')->nullable();
             $table->smallInteger('expandedfrom')->nullable();
-            $table->integer('created');
-            $table->integer('lastupdate');
+//            $table->integer('created');
+//            $table->integer('lastupdate');
 
-            //$table->timestamps();
+            $table->timestamps();
 
             $table->foreign('world_id')->references('id')->on('worlds');
             $table->foreign('user_id')->references('id')->on('users');

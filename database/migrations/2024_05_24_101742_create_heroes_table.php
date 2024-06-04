@@ -21,18 +21,18 @@ return new class extends Migration
             $table->smallInteger('sucsadv')->nullable();
             $table->tinyInteger('speed');
             $table->tinyInteger('item_speed')->nullable();
-            $table->smallInteger('points');
-            $table->mediumInteger('experience');
+            $table->smallInteger('points')->default(0);
+            $table->mediumInteger('experience')->default(0);
             $table->boolean('dead')->default(false);
             $table->smallInteger('health')->default(100);
+            $table->integer('power')->default(0);
 
-            $table->integer('power');
             $table->integer('fsperpoint');
             $table->smallInteger('itemfs')->nullable();
-            $table->integer('off_bonus');
-            $table->integer('def_bonus');
-            $table->integer('product');
-            $table->integer('r0')->nullable();
+            $table->integer('off_bonus')->default(0);
+            $table->integer('def_bonus')->default(0);
+            $table->integer('product')->default(4);
+            $table->integer('r0')->nullable()->default(1);
             $table->integer('r1')->nullable();
             $table->integer('r2')->nullable();
             $table->integer('r3')->nullable();
