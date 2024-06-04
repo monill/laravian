@@ -9,11 +9,6 @@
     <link rel="stylesheet" href="https://license.viserlab.com/external/install.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" integrity="sha512-+4zCK9k+qNFUR5X+cKL9EIR+ZOhtIloNl9GIKS57V1MyNsYpYcUrUeQc9vNfzsWfV28IaLL3i96P9sdNyeRssA==" crossorigin="anonymous" />
     <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
-    <style>
-        #hide {
-            display: none;
-        }
-    </style>
 </head>
 <body>
 <div class="installation-section padding-bottom padding-top">
