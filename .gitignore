@@ -23,3 +23,6 @@ migration.py
 controller.py
 /app/Models
 request.py
+storage/installed
+reset.py
+config/models.php
