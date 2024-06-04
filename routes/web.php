@@ -1,11 +1,27 @@
 <?php
 
+use App\Http\Controllers\ActivateController;
 use App\Http\Controllers\InstallController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ResourcesController;
+use App\Http\Controllers\VillagesController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::get('/dashboard', function () {
+    return view('dashboard');
+})->middleware(['auth', 'verified'])->name('dashboard');
+
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+require __DIR__.'/auth.php';
 
 Route::namespace('Installer')->group(function () {
     Route::prefix('install')->group(callback: function () {
@@ -28,3 +44,11 @@ Route::namespace('Installer')->group(function () {
         Route::get('completed', [InstallController::class, 'completed'])->name('install.completed');
     });
 });
+
+//Activate
+Route::get('activate', [ActivateController::class, 'index'])->name('activate');
+Route::post('activate', [ActivateController::class, 'store'])->name('activate.store');
+//Village
+Route::get('village', [VillagesController::class, 'index'])->name('village');
+//Resources
+Route::get('resources', [ResourcesController::class, 'index'])->name('resources');
