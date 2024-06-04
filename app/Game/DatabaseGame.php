@@ -95,12 +95,21 @@ class DatabaseGame
 
     public function updateUserField($userID, $field, $value, $mode)
     {
-        $data = match ($mode) {
-            0 => [$field => $value],
-            1 => [$field => "$field + $value"],
-            2 => [$field => "$field - $value"],
-        };
-        $this->conn->upgrade('users', $data, 'id = :id', ['id' => $userID]);
+        $data = [];
+
+        switch ($mode) {
+            case 0:
+                $data[$field] = $value;
+                break;
+            case 1:
+                $data[$field] = DB::raw("`$field` + $value");
+                break;
+            case 2:
+                $data[$field] = DB::raw("`$field` - $value");
+                break;
+        }
+
+        DB::table('users')->where('id', $userID)->update($data);
     }
 
     public function getSit($userID)
@@ -230,17 +239,25 @@ class DatabaseGame
     public function modifyGold($userID, $amount, $mode)
     {
         if (!$mode) {
-            // Decrement gold
-            $this->conn->upgrade('users', ['gold' => ["gold - $amount"]], 'id = :userid', ['userid' => $userID]);
-            // Increment usedgold
-            $this->conn->upgrade('users', ['usedgold' => ["usedgold + $amount"]], 'id = :userid', ['userid' => $userID]);
+            // Decrement gold and increment used_gold
+            DB::table('users')->where('id', $userID)->update([
+                'gold' => DB::raw("gold - $amount"),
+                'used_gold' => DB::raw("used_gold + $amount")
+            ]);
         } else {
-            // Increment gold
-            $this->conn->upgrade('users', ['gold' => ["gold + $amount"]], 'id = :userid', ['userid' => $userID]);
-            // Increment Addgold
-            $this->conn->upgrade('users', ['Addgold' => ["Addgold + $amount"]], 'id = :userid', ['userid' => $userID]);
+            // Increment gold and increment add_gold
+            DB::table('users')->where('id', $userID)->update([
+                'gold' => DB::raw("gold + $amount"),
+                'add_gold' => DB::raw("add_gold + $amount")
+            ]);
         }
-        $this->conn->insert('gold_fin_log', ['wid' => $userID, 'log' => "$amount GOLD ADDED FROM " . $_SERVER['HTTP_REFERER'] ?? '']);
+
+        DB::table('log_golds')->insert([
+            'user_id' => $userID,
+            'log' => "$amount GOLD ADDED FROM " . ($_SERVER['HTTP_REFERER']),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
 
     public function getGoldFinLog()
@@ -248,17 +265,17 @@ class DatabaseGame
         return $this->conn->select('*')->from('gold_fin_log')->get();
     }
 
-    public function instantCompleteBdataResearch($worlID, $username)
+    public function instantCompleteBdataResearch($worldID, $username)
     {
-        $bdata = $this->conn->upgrade('bdata', ['timestamp' => 1], 'wid = :wid AND type != 25 AND type != 26', ['wid' => $worlID]);
-        $research = $this->conn->upgrade('research', ['timestamp' => 1], 'vref = :vref', ['vref' => $worlID]);
+        $bdata = $this->conn->upgrade('bdata', ['timestamp' => 1], 'wid = :wid AND type != 25 AND type != 26', ['wid' => $worldID]);
+        $research = $this->conn->upgrade('research', ['timestamp' => 1], 'vref = :vref', ['vref' => $worldID]);
 
         if ($bdata || $research) {
             $this->conn->upgrade('users', ['gold' => ['gold - 2'], 'usedgold' => ['usedgold + 2']], 'username = :username', ['username' => $username]);
-            $this->conn->insert('gold_fin_log', ['wid' => $worlID, 'log' => 'Finish construction and research with gold']);
+            $this->conn->insert('gold_fin_log', ['wid' => $worldID, 'log' => 'Finish construction and research with gold']);
             return true;
         } else {
-            $this->conn->insert('gold_fin_log', ['wid' => $worlID, 'log' => 'Failed construction and research with gold']);
+            $this->conn->insert('gold_fin_log', ['wid' => $worldID, 'log' => 'Failed construction and research with gold']);
             return false;
         }
     }
@@ -329,7 +346,7 @@ class DatabaseGame
         return $result ? $result['sitter'] : null;
     }
 
-    public function canConquerOasis($vref, $wref)
+    public function canConquerOasis($vref, $worldID)
     {
         $AttackerFields = $this->getResourceLevel($vref);
         for ($i = 19; $i <= 38; $i++) {
@@ -338,11 +355,11 @@ class DatabaseGame
             }
         }
         if ($this->VillageOasisCount($vref) < floor(($HeroMansionLevel - 5) / 5)) {
-            $OasisInfo = $this->getOasisInfo($wref);
-            $troopcount = $this->countOasisTroops($wref);
+            $OasisInfo = $this->getOasisInfo($worldID);
+            $troopcount = $this->countOasisTroops($worldID);
             if ($OasisInfo['conqured'] == 0 || $OasisInfo['conqured'] != 0 && $OasisInfo['loyalty'] < 99 / min(3, (4 - $this->VillageOasisCount($OasisInfo['conqured']))) && $troopcount == 0) {
                 $CoordsVillage = $this->getCoor($vref);
-                $CoordsOasis = $this->getCoor($wref);
+                $CoordsOasis = $this->getCoor($worldID);
                 if (abs($CoordsOasis['x'] - $CoordsVillage['x']) <= 3 && abs($CoordsOasis['y'] - $CoordsVillage['y']) <= 3) {
                     return true;
                 } else {
@@ -393,17 +410,17 @@ class DatabaseGame
         return $this->conn->count('odata', ['conqured' => $vref]);
     }
 
-    public function getOasisInfo($worlid)
+    public function getOasisInfo($worldID)
     {
-        return $this->conn->select('`conqured`,`loyalty`')->from('odata')->where('`wref` = :wref', ['wref' => $worlid])->limit(1)->first();
+        return $this->conn->select('`conqured`,`loyalty`')->from('odata')->where('`wref` = :wref', ['wref' => $worldID])->limit(1)->first();
     }
 
-    public function getCoor($wref)
+    public function getCoor($worldID)
     {
-        return $this->conn->select('x, y')->from('wdata')->where('id = :id', ['id' => $wref])->limit(1)->first();
+        return $this->conn->select('x, y')->from('wdata')->where('id = :id', ['id' => $worldID])->limit(1)->first();
     }
 
-    public function conquerOasis($vref, $wref)
+    public function conquerOasis($vref, $worldID)
     {
         $villageInfo = $this->getVillage($vref);
         $time = time();
@@ -416,7 +433,7 @@ class DatabaseGame
             'owner' => $villageInfo['owner'],
             'name' => 'Occupied Oasis'
         ];
-        $this->conn->upgrade('odata', $data, 'wref = :wref', ['wref' => $wref]);
+        $this->conn->upgrade('odata', $data, 'wref = :wref', ['wref' => $worldID]);
     }
 
     public function getVillage($vid)
@@ -428,39 +445,39 @@ class DatabaseGame
             ->get();
     }
 
-    public function modifyOasisLoyalty($wref)
+    public function modifyOasisLoyalty($worldID)
     {
-        if ($this->isVillageOases($wref) != 0) {
-            $oasisInfo = $this->getOasisInfo($wref);
+        if ($this->isVillageOases($worldID) != 0) {
+            $oasisInfo = $this->getOasisInfo($worldID);
             if ($oasisInfo['conqured'] != 0) {
                 $loyaltyAmendment = floor(100 / min(3, (4 - $this->VillageOasisCount($oasisInfo['conqured']))));
             } else {
                 $loyaltyAmendment = 100;
             }
-            $this->conn->upgrade('odata', ['loyalty' => 'GREATEST(loyalty - :loyaltyAmendment, 0)'], 'wref = :wref', ['loyaltyAmendment' => $loyaltyAmendment, 'wref' => $wref]);
+            $this->conn->upgrade('odata', ['loyalty' => 'GREATEST(loyalty - :loyaltyAmendment, 0)'], 'wref = :wref', ['loyaltyAmendment' => $loyaltyAmendment, 'wref' => $worldID]);
         }
         return false;
     }
 
-    public function isVillageOases($wref)
+    public function isVillageOases($worldID)
     {
         $result = $this->conn
             ->select('oasistype')
             ->from('wdata')
-            ->where('id = :id', ['id' => $wref])
+            ->where('id = :id', ['id' => $worldID])
             ->limit(1)
             ->first();
         return $result['oasistype'];
     }
 
-    public function oasesUpdateLastFarm($wref)
+    public function oasesUpdateLastFarm($worldID)
     {
-        $this->conn->upgrade('odata', ['lastfarmed' => time()], 'wref = :wref', ['wref' => $wref]);
+        $this->conn->upgrade('odata', ['lastfarmed' => time()], 'wref = :wref', ['wref' => $worldID]);
     }
 
-    public function oasesUpdateLastTrain($wref)
+    public function oasesUpdateLastTrain($worldID)
     {
-        $this->conn->upgrade('odata', ['lasttrain' => time()], 'wref = :wref', ['wref' => $wref]);
+        $this->conn->upgrade('odata', ['lasttrain' => time()], 'wref = :wref', ['wref' => $worldID]);
     }
 
     public function checkactiveSession($username, $sessid)
@@ -506,49 +523,52 @@ class DatabaseGame
 
         switch ($sector) {
             case 1: // (-/-) SW
-                $x_a = ($world_max - ($world_max * 2));
+                $x_a = (-$world_max);
                 $x_b = 0;
-                $y_a = ($world_max - ($world_max * 2));
+                $y_a = (-$world_max);
                 $y_b = 0;
-                $order = 'ORDER BY y DESC,x DESC';
+                $order = 'DESC';
                 $mmm = rand(-1, -20);
-                $x_y = "AND x < -4 AND y < $mmm";
+                $x_y = "(x < -4 AND y < $mmm)";
                 break;
             case 2: // (+/-) SE
-                $x_a = ($world_max - ($world_max * 2));
+                $x_a = (-$world_max);
                 $x_b = 0;
                 $y_a = 0;
                 $y_b = $world_max;
-                $order = 'ORDER BY y ASC,x DESC';
+                $order = 'DESC';
                 $mmm = rand(1, 20);
-                $x_y = "AND x < -4 AND y > $mmm";
+                $x_y = "(x < -4 AND y < $mmm)";
                 break;
             case 3: // (+/+) NE
                 $x_a = 0;
                 $x_b = $world_max;
                 $y_a = 0;
                 $y_b = $world_max;
-                $order = 'ORDER BY y,x ASC';
+                $order = 'ASC';
                 $mmm = rand(1, 20);
-                $x_y = "AND x > 4 AND y > $mmm";
+                $x_y = "(x > 4 AND y > $mmm)";
                 break;
             case 4: // (-/+) NW
                 $x_a = 0;
                 $x_b = $world_max;
-                $y_a = ($world_max - ($world_max * 2));
+                $y_a = (-$world_max);
                 $y_b = 0;
-                $order = 'ORDER BY y DESC, x ASC';
+                $order = 'ASC';
                 $mmm = rand(-1, -20);
-                $x_y = "AND x > 4 AND y < $mmm";
+                $x_y = "(x > 4 AND y < $mmm)";
                 break;
         }
 
-        $q = "SELECT id FROM wdata WHERE fieldtype = 3 AND is_occupied = 0 $x_y AND (x BETWEEN $x_a AND $x_b) AND (y BETWEEN $y_a AND $y_b) AND (SQRT(POW(x, 2) + POW(y, 2)) > $nareadis) $order LIMIT 20";
-        $stmt = $this->conn->prepare($q);
-        $stmt->execute();
-        $result = $stmt->fetch(\PDO::FETCH_ASSOC);
-
-        return $result['id'];
+        return DB::table('worlds')
+            ->select('id')
+            ->where('field_type', '=', 3)
+            ->where('is_occupied', '=', 0)
+            ->whereRaw("$x_y AND (x BETWEEN $x_a AND $x_b) AND (y BETWEEN $y_a AND $y_b) AND (SQRT(POW(x, 2) + POW(y, 2)) > $nareadis)")
+            ->orderBy('y', $order)
+            ->orderBy('x', ($order == 'DESC') ? 'DESC' : 'ASC')
+            ->limit(1)
+            ->value('id');
     }
 
     public function setFieldTaken($worldID)
@@ -574,8 +594,8 @@ class DatabaseGame
             'crop' => 780,
             'max_storage' => 800 * setting('storagemultiplier'),
             'max_crop' => 800 * setting('storagemultiplier'),
-            'created' => time(),
-            'lastupdate' => time(),
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
     }
 
@@ -613,9 +633,9 @@ class DatabaseGame
      */
     public function getVillageOasis($list, $limit, $order)
     {
-        $wref = $this->getVilWref($order['x'], $order['y']);
+        $worldID = $this->getVilWref($order['x'], $order['y']);
         $where = ' WHERE true AND conqured = :wref';
-        $params = ['wref' => $wref];
+        $params = ['wref' => $worldID];
 
         foreach ($list as $key => $value) {
             if ($key !== 'extra') {
@@ -663,9 +683,9 @@ class DatabaseGame
         return $result['id'];
     }
 
-    public function checkVilExist($wref)
+    public function checkVilExist($worldID)
     {
-        return $this->conn->select('wref')->from('vdata')->where('wref = :wref', ['wref' => $wref])->limit(1)->first();
+        return $this->conn->select('wref')->from('vdata')->where('wref = :wref', ['wref' => $worldID])->limit(1)->first();
     }
 
     public function getVillageState($worldID)
@@ -674,12 +694,12 @@ class DatabaseGame
         return $result->oasis_type != 0 || $result->is_occupied != 0;
     }
 
-    public function getVillageStateForSettle($wref)
+    public function getVillageStateForSettle($worldID)
     {
         $result = $this->conn
             ->select('`oasistype`,`is_occupied`,`fieldtype`')
             ->from('wdata')
-            ->where('id = :id', ['id' => $wref])
+            ->where('id = :id', ['id' => $worldID])
             ->limit(1)
             ->first();
 
@@ -1618,7 +1638,7 @@ class DatabaseGame
 
     public function delMessage($id)
     {
-        $this->conn->delete('mdata', 'id = :id', ['id' => $id]);
+        $this->conn->delete('messages', 'id = :id', ['id' => $id]);
     }
 
     public function delNotice($id, $userID)
@@ -1632,80 +1652,99 @@ class DatabaseGame
             'client' => $client, 'owner' => $owner, 'topic' => $topic, 'message' => $message, 'send' => $send,
             'alliance' => $alliance, 'player' => $player, 'coor' => $coor, 'report' => $report, 'time' => time()
         ];
-        $this->conn->insert('mdata', $data);
+        $this->conn->insert('messages', $data);
     }
 
     public function setArchived($id)
     {
-        $this->conn->upgrade('mdata', ['archived' => 1], 'id = :id', ['id' => $id]);
+        $this->conn->upgrade('messages', ['archived' => 1], 'id = :id', ['id' => $id]);
     }
 
     public function setNorm($id)
     {
-        $this->conn->upgrade('mdata', ['archived' => 0], 'id = :id', ['id' => $id]);
+        $this->conn->upgrade('messages', ['archived' => 0], 'id = :id', ['id' => $id]);
     }
 
     public function getMessage($id, $mode)
     {
-        $params = [];
-        $where = $order = $limit = '';
         switch ($mode) {
             case 1:
-                $where = 'target = :target AND send = 0 AND archived = 0';
-                $params['target'] = $id;
-                $order = 'ORDER BY time DESC';
+                return DB::table('messages')
+                    ->where('receiver_id', $id)
+                    ->where('send', 0)
+                    ->where('archived', 0)
+                    ->orderBy('created_at', 'DESC')
+                    ->get();
                 break;
             case 2:
-                $where = 'owner = :owner';
-                $params['owner'] = $id;
-                $order = 'ORDER BY time DESC';
+                return DB::table('messages')
+                    ->where('sender_id', $id)
+                    ->orderBy('created_at', 'DESC')
+                    ->get();
                 break;
             case 3:
-                $where = 'id = :id';
-                $params['id'] = $id;
+                return DB::table('messages')->where('id', $id)->get();
                 break;
             case 4:
-                $this->conn->upgrade('mdata', ['viewed' => 1], 'id = :id AND target = :target', ['id' => $id, 'target' => Session::get('uid')]);
+                DB::table('messages')
+                    ->where('id', $id)
+                    ->where('receiver_id', session()->get('uid'))
+                    ->update(['viewed' => 1]);
                 break;
             case 5:
-                $this->conn->upgrade('mdata', ['deltarget' => 1, 'viewed' => 1], 'id = :id', ['id' => $id]);
+                DB::table('messages')->where('id', $id)->update(['deltarget' => 1, 'viewed' => 1]);
                 break;
             case 6:
-                $where = 'target = :target AND send = 0 AND archived = 1';
-                $params['target'] = $id;
+                return DB::table('messages')
+                    ->where('receiver_id', $id)
+                    ->where('send', 0)
+                    ->where('archived', 1)
+                    ->get();
                 break;
             case 7:
-                $this->conn->upgrade('mdata', ['delowner' => 1], 'id = :id', ['id' => $id]);
+                DB::table('messages')->where('id', $id)->update(['delowner' => 1]);
                 break;
             case 8:
-                $this->conn->upgrade('mdata', ['deltarget' => 1, 'delowner' => 1, 'viewed' => 1], 'id = :id', ['id' => $id]);
+                DB::table('messages')->where('id', $id)->update(['deltarget' => 1, 'delowner' => 1, 'viewed' => 1]);
                 break;
             case 9:
-                $where = 'target = :target AND send = 0 AND archived = 0 AND deltarget = 0 AND viewed = 0';
-                $params['target'] = $id;
-                $order = 'ORDER BY time DESC';
+                return DB::table('messages')
+                    ->where('receiver_id', $id)
+                    ->where('send', 0)
+                    ->where('archived', 0)
+                    ->where('deltarget', 0)
+                    ->where('viewed', 0)
+                    ->orderBy('created_at', 'DESC')
+                    ->get();
                 break;
             case 10:
-                $where = 'owner = :owner AND delowner = 0';
-                $params['owner'] = $id;
-                $order = 'ORDER BY time DESC';
+                return DB::table('messages')
+                    ->where('sender_id', $id)
+                    ->where('delowner', 0)
+                    ->orderBy('created_at', 'DESC')
+                    ->get();
                 break;
             case 11:
-                $where = 'target = :target AND send = 0 AND archived = 1 AND deltarget = 0';
-                $params['target'] = $id;
+                return DB::table('messages')
+                    ->where('receiver_id', $id)
+                    ->where('send', 0)
+                    ->where('archived', 1)
+                    ->where('deltarget', 0)
+                    ->get();
                 break;
             case 12:
-                $where = 'target = :target AND send = 0 AND archived = 0 AND deltarget = 0 AND viewed = 0';
-                $params['target'] = $id;
-                $order = 'ORDER BY time DESC';
-                $limit = 1;
+                return DB::table('messages')
+                    ->where('receiver_id', $id)
+                    ->where('send', 0)
+                    ->where('archived', 0)
+                    ->where('deltarget', 0)
+                    ->where('viewed', 0)
+                    ->orderBy('created_at', 'DESC')
+                    ->limit(1)
+                    ->get();
                 break;
-        }
-
-        if ($mode <= 3 || $mode == 6 || $mode > 8) {
-            return $this->conn->select('*')->from('mdata')->where($where, $params)->order($order)->limit($limit)->get();
-        } else {
-            return false;
+            default:
+                return false;
         }
     }
 
@@ -1768,10 +1807,10 @@ class DatabaseGame
         return $result['maxreport'];
     }
 
-    public function addBuilding($worlID, $field, $type, $loop, $time, $master, $level)
+    public function addBuilding($worldID, $field, $type, $loop, $time, $master, $level)
     {
-        $this->conn->upgrade('fdata', ["f{$field}t" => $type], 'vref = :vref', ['vref' => $worlID]);
-        $this->conn->insert('bdata', ['wid' => $worlID, 'field' => $field, 'type' => $type, 'loop' => $loop, 'time' => $time, 'master' => $master, 'level' => $level]);
+        $this->conn->upgrade('fdata', ["f{$field}t" => $type], 'vref = :vref', ['vref' => $worldID]);
+        $this->conn->insert('bdata', ['wid' => $worldID, 'field' => $field, 'type' => $type, 'loop' => $loop, 'time' => $time, 'master' => $master, 'level' => $level]);
     }
 
     public function removeBuilding($d)
@@ -1871,18 +1910,18 @@ class DatabaseGame
         $this->conn->delete('bdata', 'id = :id', ['id' => $d]);
     }
 
-    public function addDemolition($worlID, $field)
+    public function addDemolition($worldID, $field)
     {
         $building = new Building();
         $village = new Village();
 
-        $this->conn->delete('bdata', 'field = :field AND wid = :wid', ['field' => $field, 'wid' => $worlID]);
+        $this->conn->delete('bdata', 'field = :field AND wid = :wid', ['field' => $field, 'wid' => $worldID]);
         $uprequire = $building->resourceRequired($field - 1, $village->resarray["f{$field}t"]);
 
         $data = [
-            'vref' => $worlID,
+            'vref' => $worldID,
             'buildnumber' => $field,
-            'lvl' => ($this->getFieldLevel($worlID, $field) - 1),
+            'lvl' => ($this->getFieldLevel($worldID, $field) - 1),
             'timetofinish' => (time() + floor($uprequire['time'] / 2))
         ];
         $this->conn->insert('demolition', $data);
@@ -1893,58 +1932,58 @@ class DatabaseGame
         return $this->conn->select("f{$field}")->from('fdata')->where('vref = :vref', ['vref' => $vid])->first();
     }
 
-    public function getDemolition($worlID = 0)
+    public function getDemolition($worldID = 0)
     {
-        $conditions = ($worlID) ? ['vref' => $worlID] : 'timetofinish <= ' . time();
+        $conditions = ($worldID) ? ['vref' => $worldID] : 'timetofinish <= ' . time();
         return $this->conn->select('`vref`,`buildnumber`,`timetofinish`')
             ->from('demolition')
             ->where($conditions)
             ->get();
     }
 
-    public function finishDemolition($worlID)
+    public function finishDemolition($worldID)
     {
-        $this->conn->upgrade('demolition', ['timetofinish' => 0], 'vref = :vref', ['vref' => $worlID]);
+        $this->conn->upgrade('demolition', ['timetofinish' => 0], 'vref = :vref', ['vref' => $worldID]);
     }
 
-    public function delDemolition($worlID)
+    public function delDemolition($worldID)
     {
-        $this->conn->delete('demolition', 'vref = :vref', ['vref' => $worlID]);
+        $this->conn->delete('demolition', 'vref = :vref', ['vref' => $worldID]);
     }
 
-    public function getJobs($worlID)
+    public function getJobs($worldID)
     {
         return $this->conn->select('*')
             ->from('bdata')
-            ->where('wid = :wid', ['wid' => $worlID])
+            ->where('wid = :wid', ['wid' => $worldID])
             ->orderByAsc('id')
             ->get();
     }
 
-    public function finishWoodCutter($worlID)
+    public function finishWoodCutter($worldID)
     {
         $bdata = $this->conn->select('id')
             ->from('bdata')
-            ->where('wid = :wid AND type = 1', ['wid' => $worlID])
+            ->where('wid = :wid AND type = 1', ['wid' => $worldID])
             ->order('ORDER BY master, timestamp ASC')
             ->first();
         $this->conn->upgrade('bdata', ['timestamp' => time() - 1], 'id = :id', ['id' => $bdata['id']]);
     }
 
-    public function finishCropLand($worlID)
+    public function finishCropLand($worldID)
     {
-        $result1 = $this->conn->select('`id`,`timestamp`')->from('bdata')->where('wid = :wid AND type = 4', ['wid' => $worlID])->order('ORDER BY master, timestamp ASC')->first();
+        $result1 = $this->conn->select('`id`,`timestamp`')->from('bdata')->where('wid = :wid AND type = 4', ['wid' => $worldID])->order('ORDER BY master, timestamp ASC')->first();
         $this->conn->upgrade('bdata', ['timestamp' => time() - 1], 'id = :id', ['id' => $result1['id']]);
 
-        $result2 = $this->conn->select('`id`')->from('bdata')->where('wid = :wid AND loopcon = 1 AND field <= 18', ['wid' => $worlID])->order('ORDER BY master, timestamp ASC')->first();
+        $result2 = $this->conn->select('`id`')->from('bdata')->where('wid = :wid AND loopcon = 1 AND field <= 18', ['wid' => $worldID])->order('ORDER BY master, timestamp ASC')->first();
         $this->conn->upgrade('bdata', ['timestamp' => $result2['timestamp'] - time()], 'id = :id', ['id' => $result2['id']]);
     }
 
-    public function finishBuildings($worlID)
+    public function finishBuildings($worldID)
     {
         $buildings = $this->conn->select('id')
             ->from('bdata')
-            ->where('id = :id', ['id' => $worlID])
+            ->where('id = :id', ['id' => $worldID])
             ->order('ORDER BY master, timestamp ASC')
             ->get();
 
@@ -1953,45 +1992,45 @@ class DatabaseGame
         }
     }
 
-    public function getMasterJobs($worlID)
+    public function getMasterJobs($worldID)
     {
         return $this->conn->select('`id`')
             ->from('bdata')
-            ->where('wid = :wid AND master = 1', ['wid' => $worlID])
+            ->where('wid = :wid AND master = 1', ['wid' => $worldID])
             ->order('ORDER BY master, timestamp ASC')
             ->get();
     }
 
-    public function getBuildingByField($worlID, $field)
+    public function getBuildingByField($worldID, $field)
     {
         return $this->conn->select('`id`')
             ->from('bdata')
-            ->where('wid = :wid AND field = :field AND master = 0', ['wid' => $worlID, 'field' => $field])
+            ->where('wid = :wid AND field = :field AND master = 0', ['wid' => $worldID, 'field' => $field])
             ->get();
     }
 
-    public function getBuildingByType($worlID, $type)
+    public function getBuildingByType($worldID, $type)
     {
         return $this->conn->select('`id`')
             ->from('bdata')
-            ->where('wid = :wid AND type = :type AND master = 0', ['wid' => $worlID, 'type' => $type])
+            ->where('wid = :wid AND type = :type AND master = 0', ['wid' => $worldID, 'type' => $type])
             ->order('ORDER BY master, timestamp ASC')
             ->get();
     }
 
-    public function getDorf1Building($worlID)
+    public function getDorf1Building($worldID)
     {
         return $this->conn->select('`timestamp`')
             ->from('bdata')
-            ->where('wid = :wid AND field < 19 AND master = 0', ['wid' => $worlID])
+            ->where('wid = :wid AND field < 19 AND master = 0', ['wid' => $worldID])
             ->get();
     }
 
-    public function getDorf2Building($worlID)
+    public function getDorf2Building($worldID)
     {
         return $this->conn->select('`timestamp`')
             ->from('bdata')
-            ->where('wid = :wid AND field > 18 AND master = 0', ['wid' => $worlID])
+            ->where('wid = :wid AND field > 18 AND master = 0', ['wid' => $worldID])
             ->get();
     }
 
@@ -2145,14 +2184,14 @@ class DatabaseGame
     public function getUserField($userID, $field, $mode)
     {
         $column = !$mode ? 'id' : 'username';
-        $result = $this->conn->select($field)->from('users')->where("$column = :ref", ['ref' => $userID])->first();
-        return $result[$field];
+        $result = DB::table('users')->select($field)->where($column, $userID)->first();
+        return $result->$field;
     }
 
-    public function getVillageField($ref, $field)
+    public function getVillageField($worldID, $field)
     {
-        $result = $this->conn->select($field)->from('vdata')->where('wref = :wref', ['wref' => $ref])->limit(1)->first();
-        return $result[$field];
+        $result = DB::table('villages')->select($field)->where('world_id', $worldID)->limit(1)->first();
+        return $result->$field;
     }
 
     /**
@@ -2305,7 +2344,7 @@ class DatabaseGame
         return $this->conn->select('id, username, alliance, ap, apall, dp, dpall, access')->from('users')->where('tribe <= 3 AND access < 8')->get();
     }
 
-    public function getBuildList($type, $worlID = 0)
+    public function getBuildList($type, $worldID = 0)
     {
         $where = 'true';
         $params = [];
@@ -2314,9 +2353,9 @@ class DatabaseGame
             $where .= ' AND type = :type';
             $params['type'] = $type;
         }
-        if ($worlID) {
+        if ($worldID) {
             $where .= ' AND wid = :wid';
-            $params['wid'] = $worlID;
+            $params['wid'] = $worldID;
         }
 
         return $this->conn->select('`id`')
@@ -2557,7 +2596,7 @@ class DatabaseGame
         $this->conn->upgrade('training', ['amt' => 'GREATEST(amt - :trained, 0)', 'timestamp' => time()], 'id = :id', ['trained' => $trained, 'id' => $id]);
     }
 
-    public function modifyUnit($vref, $unit, $amount, $mode)
+    public function modifyUnit($worldID, $unit, $amount, $mode)
     {
         if ($unit == 230) {
             $unit = 30;
@@ -2573,14 +2612,14 @@ class DatabaseGame
 
         switch ($mode) {
             case 0:
-                $result = $this->conn->select($unit)->from('units')->where('vref = :vref', ['vref' => $vref])->first();
-                $this->conn->from('units')->decrement($unit, ($unit - min($result[$unit], $amount)))->where('vref = :vref', ['vref' => $vref])->update();
+                $result = DB::table('units')->select($unit)->where('world_id', $worldID)->first();
+                DB::table('units')->where('world_id', $worldID)->decrement($unit, max(0, min($result->{$unit}, $amount)));
                 break;
             case 1:
-                $this->conn->from('units')->increment($unit, $amount)->where('vref = :vref', ['vref' => $vref])->update();
+                DB::table('units')->where('world_id', $worldID)->increment($unit, $amount);
                 break;
             case 2:
-                $this->conn->upgrade('units', [$unit => $amount], 'vref = :vref', ['vref' => $vref]);
+                DB::table('units')->where('world_id', $worldID)->update([$unit => DB::raw("`$unit` + $amount")]);
                 break;
         }
     }
@@ -2956,27 +2995,27 @@ class DatabaseGame
     }
 
     //MARKET FIXES
-    public function getWoodAvailable($wref)
+    public function getWoodAvailable($worldID)
     {
-        $result = $this->conn->select('wood')->from('vdata')->where('wref = :wref', ['wref' => $wref])->limit(1)->first();
+        $result = $this->conn->select('wood')->from('vdata')->where('wref = :wref', ['wref' => $worldID])->limit(1)->first();
         return (int)$result['wood'];
     }
 
-    public function getClayAvailable($wref)
+    public function getClayAvailable($worldID)
     {
-        $result = $this->conn->select('clay')->from('vdata')->where('wref = :wref', ['wref' => $wref])->limit(1)->first();
+        $result = $this->conn->select('clay')->from('vdata')->where('wref = :wref', ['wref' => $worldID])->limit(1)->first();
         return (int)$result['clay'];
     }
 
-    public function getIronAvailable($wref)
+    public function getIronAvailable($worldID)
     {
-        $result = $this->conn->select('iron')->from('vdata')->where('wref = :wref', ['wref' => $wref])->limit(1)->first();
+        $result = $this->conn->select('iron')->from('vdata')->where('wref = :wref', ['wref' => $worldID])->limit(1)->first();
         return (int)$result['iron'];
     }
 
-    public function getCropAvailable($wref)
+    public function getCropAvailable($worldID)
     {
-        $result = $this->conn->select('crop')->from('vdata')->where('wref = :wref', ['wref' => $wref])->limit(1)->first();
+        $result = $this->conn->select('crop')->from('vdata')->where('wref = :wref', ['wref' => $worldID])->limit(1)->first();
         return $result['crop'];
     }
 
@@ -3222,8 +3261,8 @@ class DatabaseGame
 
     public function addHeroFace($userID)
     {
-        $data = [
-            'uid' => $userID,
+        DB::table('hero_faces')->insert([
+            'user_id' => $userID,
             'beard' => rand(0, 3),
             'ear' => rand(0, 3),
             'eye' => rand(0, 4),
@@ -3233,8 +3272,7 @@ class DatabaseGame
             'mouth' => rand(0, 3),
             'nose' => rand(0, 3),
             'color' => rand(0, 4)
-        ];
-        $this->conn->insert('heroface', $data);
+        ]);
     }
 
     public function modifyHeroFace($userID, $column, $value)
@@ -3260,11 +3298,11 @@ class DatabaseGame
         $this->conn->upgrade('users', ['clp' => "clp + $clp"], 'id = :id', ['id' => $userID]);
     }
 
-    public function sendwlcMessage($client, $owner, $topic, $message, $send)
+    public function sendwlcMessage($client, $sender_id, $topic, $message, $send)
     {
         $data = [
-            'target' => $client,
-            'owner' => $owner,
+            'receiver_id' => $client,
+            'sender_id' => $sender_id,
             'topic' => $topic,
             'message' => $message,
             'viewed' => 1,
@@ -3272,7 +3310,7 @@ class DatabaseGame
             'send' => $send,
             'time' => time()
         ];
-        $this->conn->insert('mdata', $data);
+        $this->conn->insert('messages', $data);
     }
 
     public function getLinks($userID)
@@ -3301,9 +3339,9 @@ class DatabaseGame
         return $this->conn->select('*')->from('auction')->where('finish = 0')->get();
     }
 
-    public function getVilFarmlist($wref)
+    public function getVilFarmlist($worldID)
     {
-        $result = $this->conn->select('id')->from('farmlist')->where('wref = :wref', ['wref' => $wref])->orderByAsc('wref')->first();
+        $result = $this->conn->select('id')->from('farmlist')->where('wref = :wref', ['wref' => $worldID])->orderByAsc('wref')->first();
         return $result['id'] != 0 ? true : false;
     }
 
@@ -3317,9 +3355,9 @@ class DatabaseGame
         $this->conn->delete('raidlist', 'id = :id', ['id' => $id]);
     }
 
-    public function createFarmList($wref, $owner, $name)
+    public function createFarmList($worldID, $owner, $name)
     {
-        $this->conn->insert('farmlist', ['wref' => $wref, 'owner' => $owner, 'name' => $name]);
+        $this->conn->insert('farmlist', ['wref' => $worldID, 'owner' => $owner, 'name' => $name]);
     }
 
     public function addSlotFarm($lid, $towref, $x, $y, $distance, $t1, $t2, $t3, $t4, $t5, $t6, $t7, $t8, $t9, $t10)
@@ -3332,11 +3370,11 @@ class DatabaseGame
         $this->conn->insert('raidlist', $data);
     }
 
-    public function editSlotFarm($eid, $lid, $wref, $x, $y, $t1, $t2, $t3, $t4, $t5, $t6, $t7, $t8, $t9, $t10)
+    public function editSlotFarm($eid, $lid, $worldID, $x, $y, $t1, $t2, $t3, $t4, $t5, $t6, $t7, $t8, $t9, $t10)
     {
         $data = [
             'lid' => $lid,
-            'towref' => $wref,
+            'towref' => $worldID,
             'x' => $x,
             'y' => $y,
             't1' => $t1,
@@ -3353,10 +3391,10 @@ class DatabaseGame
         $this->conn->upgrade('raidlist', $data, 'id = :id', ['id' => $eid]);
     }
 
-    public function removeOases($wref)
+    public function removeOases($worldID)
     {
-        $r1 = $this->conn->upgrade('odata', ['conqured' => 0, 'owner' => 3, 'name' => 'Unoccupied oasis'], 'wref = :wref', ['wref' => $wref]);
-        $r2 = $this->conn->upgrade('wdata', ['is_occupied' => 0], 'id = :id', ['id' => $wref]);
+        $r1 = $this->conn->upgrade('odata', ['conqured' => 0, 'owner' => 3, 'name' => 'Unoccupied oasis'], 'wref = :wref', ['wref' => $worldID]);
+        $r2 = $this->conn->upgrade('wdata', ['is_occupied' => 0], 'id = :id', ['id' => $worldID]);
         return ($r1 && $r2);
     }
 
@@ -3583,8 +3621,8 @@ class DatabaseGame
 
     public function getVFH($userID)
     {
-        $result = $this->conn->select('wref')->from('vdata')->where('owner = :owner AND capital = 1', ['owner' => $userID])->first();
-        return $result['wref'];
+        $result = DB::table('villages')->select('world_id')->where('user_id', $userID)->where('is_capital', 1)->first();
+        return $result->world_id;
     }
 
     public function getNotice2($id, $field)
@@ -3593,34 +3631,26 @@ class DatabaseGame
         return $result[$field];
     }
 
-    public function addAdventure($wref, $userID)
+    public function addAdventure($worldID, $userID)
     {
-        $time = time() + (3600 * 120);
-        $ddd = rand(0, 3);
-        $dif = $ddd == 1 ? 1 : 0;
-        $lastw = 641601;
-        if (($wref - 10000) <= 10) {
-            $w1 = rand(10, ($wref + 10000));
-        } elseif (($wref + 10000) >= $lastw) {
-            $w1 = rand(($wref - 10000), ($lastw - 10000));
-        } else {
-            $w1 = rand(($wref - 10000), ($wref + 10000));
-        }
-        $data = [
-            'wref' => $w1,
-            'uid' => $userID,
-            'dif' => $dif,
-            'time' => $time,
+        $lastWorldID = DB::table('worlds')->max('id');
+
+        $minWorldID = max(1, $worldID - 10000);
+        $maxWorldID = min($worldID + 10000, $lastWorldID);
+        $w1 = rand($minWorldID, $maxWorldID);
+
+        DB::table('adventures')->insert([
+            'world_id' => $w1,
+            'user_id' => $userID,
+            'dif' => rand(0, 3) == 1 ? 1 : 0,
+            'time' => time() + (3600 * 120),
             'end' => 0
-        ];
-        $this->conn->insert('adventure', $data);
+        ]);
     }
 
     public function addHero($userID)
     {
-        $time = time();
-
-        $tribe = $this->getUserField($userID, 'tribe', 0);
+        $tribe = $this->getUserField($userID, 'tribe_id', 0);
 
         $default = [
             0 => ['cpproduction' => 0, 'speed' => 7, 'rob' => 0, 'fsperpoint' => 100, 'extraresist' => 0, 'vsnatars' => 0, 'autoregen' => 10, 'extraexpgain' => 0, 'accountmspeed' => 0, 'allymspeed' => 0, 'longwaymspeed' => 0, 'returnmspeed' => 0],
@@ -3634,20 +3664,10 @@ class DatabaseGame
         $hero = $default[$tribe];
 
         $data = [
-            'uid' => $userID,
-            'wref' => 0,
-            'level' => 0,
+            'world_id' => $this->getVFH($userID),
+            'user_id' => $userID,
             'speed' => $hero['speed'],
-            'points' => 0,
-            'experience' => '0',
-            'dead' => 0,
-            'health' => '100',
-            'power' => '0',
             'fsperpoint' => $hero['fsperpoint'],
-            'offBonus' => '0',
-            'defBonus' => '0',
-            'product' => '4',
-            'r0' => '1',
             'autoregen' => $hero['autoregen'],
             'extraexpgain' => $hero['extraexpgain'],
             'cpproduction' => $hero['cpproduction'],
@@ -3658,11 +3678,10 @@ class DatabaseGame
             'allymspeed' => $hero['allymspeed'],
             'longwaymspeed' => $hero['longwaymspeed'],
             'returnmspeed' => $hero['returnmspeed'],
-            'lastupdate' => $time,
-            'lastadv' => '0',
-            'hash' => md5($time)
+            'lastupdate' => time(),
+            'hash' => md5_gen()
         ];
-        $this->conn->insert('hero', $data);
+        DB::table('heroes')->insert($data);
     }
 
     // Add new password => mode:0
@@ -3700,23 +3719,23 @@ class DatabaseGame
         return $this->conn->select('`npw`,`act`')->from('newproc')->where('uid = :uid', ['uid' => $userID])->get();
     }
 
-    public function checkAdventure($userID, $wref, $end)
+    public function checkAdventure($userID, $worldID, $end)
     {
         return $this->conn->select('`id`')
             ->from('adventure')
-            ->where('uid = :uid AND wref = :wref AND end = :end', ['uid' => $userID, 'wref' => $wref, 'end' => $end])
+            ->where('uid = :uid AND wref = :wref AND end = :end', ['uid' => $userID, 'wref' => $worldID, 'end' => $end])
             ->get();
     }
 
-    public function getAdventure($userID, $wref = 0, $end = 2)
+    public function getAdventure($userID, $worldID = 0, $end = 2)
     {
         $params = [];
         $where = 'uid = :uid';
         $params['uid'] = $userID;
 
-        if ($wref != 0) {
+        if ($worldID != 0) {
             $where .= ' AND wref = :wref ';
-            $params['wref'] = $wref;
+            $params['wref'] = $worldID;
         }
         if ($end != 2) {
             $where .= ' AND end = :end ';
@@ -3865,12 +3884,12 @@ class DatabaseGame
         imagecopy($dst_im, $src_im, $dst_x, $dst_y, $src_x, $src_y, $src_w, $src_h);
     }
 
-    public function getCropProdstarv($wref)
+    public function getCropProdstarv($worldID)
     {
         $basecrop = $grainmill = $bakery = 0;
-        $owner = $this->getVillageField($wref, 'owner');
+        $owner = $this->getVillageField($worldID, 'owner');
         $bonus = $this->getUserField($owner, 'b4', 0);
-        $buildarray = $this->getResourceLevel($wref);
+        $buildarray = $this->getResourceLevel($worldID);
         $cropholder = [];
         for ($i = 1; $i <= 38; $i++) {
             if ($buildarray["f{$i}t"] == 4) {
@@ -3883,7 +3902,7 @@ class DatabaseGame
                 $bakery = $buildarray["f{$i}"];
             }
         }
-        $oases = $this->conn->select('type')->from('odata')->where('conqured = :conqured', ['conqured' => $wref])->get();
+        $oases = $this->conn->select('type')->from('odata')->where('conqured = :conqured', ['conqured' => $worldID])->get();
         $cropo = 0;
         foreach ($oases as $oasis) {
             switch ($oasis['type']) {
@@ -3933,13 +3952,13 @@ class DatabaseGame
         return $this->conn->select('`owner`')->from('vdata')->where('owner = 2 AND name = "WW Village"')->orderByAsc('created')->get();
     }
 
-    public function addNatarsVillage($worlID, $userID, $capital)
+    public function addNatarsVillage($worldID, $userID, $capital)
     {
         $total = count($this->getVillagesID($userID));
         $vname = sprintf('[%05d] Natars', $total + 1);
         $time = time();
         $data = [
-            'wref' => $worlID, 'owner' => $userID, 'name' => $vname, 'capital' => $capital, 'pop' => 2, 'cp' => 1,
+            'wref' => $worldID, 'owner' => $userID, 'name' => $vname, 'capital' => $capital, 'pop' => 2, 'cp' => 1,
             'celebration' => 0, 'wood' => 780, 'clay' => 780, 'iron' => 780, 'maxstore' => 800, 'crop' => 780,
             'maxcrop' => 800, 'lastupdate' => $time, 'created' => $time, 'natar' => 1
         ];
@@ -3982,21 +4001,21 @@ class DatabaseGame
             ->first();
     }
 
-    public function getArtEffMSpeed($wref)
+    public function getArtEffMSpeed($worldID)
     {
         $artEff = 1;
-        $res = $this->getArteEffectByType($wref, 4);
+        $res = $this->getArteEffectByType($worldID, 4);
         if ($res != 0) {
             $artEff = $res;
         }
         return $artEff;
     }
 
-    public function getArteEffectByType($wref, $type)
+    public function getArteEffectByType($worldID, $type)
     {
         $artEff = 0;
         $this->updateFoolArtes();
-        $owner = $this->getVillage($wref);
+        $owner = $this->getVillage($worldID);
         if (!empty($owner) && isset($owner['owner'])) {
             $conquered = (time() - max(86400 / setting('speed'), 600));
             $results = $this->conn->select('`vref`,`effect`,`aoe`')
@@ -4007,7 +4026,7 @@ class DatabaseGame
             if (!empty($results) && count($results) > 0) {
                 $i = 0;
                 foreach ($results as $result) {
-                    if ($result['vref'] == $wref) {
+                    if ($result['vref'] == $worldID) {
                         return $result['effect'];
                     }
                     if ($result['aoe'] == 3) {
@@ -4061,70 +4080,70 @@ class DatabaseGame
         }
     }
 
-    public function getArtEffDiet($wref)
+    public function getArtEffDiet($worldID)
     {
         $artEff = 1;
-        $res = $this->getArteEffectByType($wref, 6);
+        $res = $this->getArteEffectByType($worldID, 6);
         if ($res != 0) {
             $artEff = $res;
         }
         return $artEff;
     }
 
-    public function getArtEffGrt($wref)
+    public function getArtEffGrt($worldID)
     {
         $artEff = 0;
-        $res = $this->getArteEffectByType($wref, 9);
+        $res = $this->getArteEffectByType($worldID, 9);
         if ($res != 0) {
             $artEff = $res;
         }
         return $artEff;
     }
 
-    public function getArtEffArch($wref)
+    public function getArtEffArch($worldID)
     {
         $artEff = 1;
-        $res = $this->getArteEffectByType($wref, 2);
+        $res = $this->getArteEffectByType($worldID, 2);
         if ($res != 0) {
             $artEff = $res;
         }
         return $artEff;
     }
 
-    public function getArtEffSpy($wref)
+    public function getArtEffSpy($worldID)
     {
         $artEff = 0;
-        $res = $this->getArteEffectByType($wref, 5);
+        $res = $this->getArteEffectByType($worldID, 5);
         if ($res != 0) {
             $artEff = $res;
         }
         return $artEff;
     }
 
-    public function getArtEffTrain($wref)
+    public function getArtEffTrain($worldID)
     {
         $artEff = 1;
-        $res = $this->getArteEffectByType($wref, 8);
+        $res = $this->getArteEffectByType($worldID, 8);
         if ($res != 0) {
             $artEff = $res;
         }
         return $artEff;
     }
 
-    public function getArtEffConf($wref)
+    public function getArtEffConf($worldID)
     {
         $artEff = 1;
-        $res = $this->getArteEffectByType($wref, 7);
+        $res = $this->getArteEffectByType($worldID, 7);
         if ($res != 0) {
             $artEff = $res;
         }
         return $artEff;
     }
 
-    public function getArtEffBP($wref)
+    public function getArtEffBP($worldID)
     {
         $artEff = 0;
-        $vinfo = $this->getVillage($wref);
+        $vinfo = $this->getVillage($worldID);
 
         $conquered = (time() - max(86400 / setting('speed'), 600));
         $result = $this->conn->select('id')
@@ -4173,21 +4192,21 @@ class DatabaseGame
         return $artEff;
     }
 
-    public function modifyExtraVillage($worlID, $column, $value)
+    public function modifyExtraVillage($worldID, $column, $value)
     {
-        $this->conn->from('vdata')->increment($column, $value)->where('vref = :vref', ['vref' => $worlID])->update();
+        $this->conn->from('vdata')->increment($column, $value)->where('vref = :vref', ['vref' => $worldID])->update();
     }
 
-    public function modifyFieldLevel($worlID, $field, $level, $mode)
+    public function modifyFieldLevel($worldID, $field, $level, $mode)
     {
         $b = "f{$field}";
         $operation = $mode ? '+' : '-';
-        $this->conn->upgrade('fdata', [$b => "$b $operation $level"], 'vref = :vref', ['vref' => $worlID, 'level' => $level]);
+        $this->conn->upgrade('fdata', [$b => "$b $operation $level"], 'vref = :vref', ['vref' => $worldID, 'level' => $level]);
     }
 
-    public function modifyFieldType($worlID, $field, $type)
+    public function modifyFieldType($worldID, $field, $type)
     {
-        $this->conn->upgrade('fdata', ["f{$field}t" => $type], 'vref = :vref', ['vref' => $worlID]);
+        $this->conn->upgrade('fdata', ["f{$field}t" => $type], 'vref = :vref', ['vref' => $worldID]);
     }
 
     public function resendact($mail)
@@ -4235,9 +4254,9 @@ class DatabaseGame
         return $this->conn->select('username, email')->from('users')->where('id = :id', ['id' => $id])->first();
     }
 
-    public function settribe($tribe, $userID)
+    public function setTribe($tribeID, $userID)
     {
-        return $this->conn->upgrade('users', ['tribe' => $tribe], 'id = :id AND reg2 = 1', ['id' => $userID]);
+        DB::table('users')->where('id', $userID)->update(['tribe_id' => $tribeID]);
     }
 
     public function checkreg($userID)
@@ -4257,17 +4276,18 @@ class DatabaseGame
 
     public function setreg2($userID)
     {
-        $this->conn->upgrade('users', ['reg2' => 0], 'id = :id AND reg2 = 1', ['id' => $userID]);
+        DB::table('users')->where('id', $userID)->where('reg2', 1)->update(['reg2' => 0]);
     }
 
     public function getNotice5($userID)
     {
-        return $this->conn->select('`id`')
-            ->from('ndata')
-            ->where('uid = :uid AND viewed = 0', ['uid' => $userID, 'viewed' => 0])
-            ->orderByDesc('time')
+        return DB::table('notices')
+            ->select('id')
+            ->where('user_id', $userID)
+            ->where('viewed', 0)
+            ->orderByDesc('created_at')
             ->limit(1)
-            ->first();
+            ->count();
     }
 
     public function setref($id, $name)
@@ -4317,21 +4337,21 @@ class DatabaseGame
     public function modifyHero2($column, $value, $userID, $mode)
     {
         if ($mode === 0) {
-            $this->conn->upgrade('hero', [$column => $value], 'uid = :uid', ['uid' => $userID]);
+            DB::table('heroes')->where('user_id', $userID)->update([$column => $value]);
         } elseif ($mode === 1) {
-            $this->conn->from('units')->increment($column, $value)->where('uid = :uid', ['uid' => $userID])->update();
+            DB::table('units')->where('user_id', $userID)->increment($column, $value);
         } elseif ($mode == 2) {
-            $this->conn->from('hero')->decrement($column, $value)->where('uid = :uid', ['uid' => $userID])->update();
+            DB::table('heroes')->where('user_id', $userID)->decrement($column, $value);
         }
     }
 
-    public function createTradeRoute($userID, $worlID, $from, $r1, $r2, $r3, $r4, $start, $deliveries, $merchant, $time)
+    public function createTradeRoute($userID, $worldID, $from, $r1, $r2, $r3, $r4, $start, $deliveries, $merchant, $time)
     {
         $this->conn->upgrade('users', ['gold' => 'gold - 2'], 'id = :id', ['id' => $userID]);
 
         $data = [
             'uid' => $userID,
-            'wid' => $worlID,
+            'wid' => $worldID,
             'from' => $from,
             'r1' => $r1,
             'r2' => $r2,
