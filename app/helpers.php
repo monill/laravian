@@ -53,3 +53,7 @@ if (!function_exists('setting')) {
         return \Illuminate\Support\Facades\DB::table('settings')->where(['key' => $name])->first()->value;
     }
 }
+
+function active($url) {
+    return request()->is($url) ? 'active' : '';
+}
