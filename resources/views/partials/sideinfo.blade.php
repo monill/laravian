@@ -50,7 +50,7 @@ for ($t = 19; $t <= 40; $t++) {
             echo "<span class='warning'>" . SI_BUILDWORKSHOP . "</span>";
         } ?>">
             <div class="button-container addHoverClick">
-                <img src="/assets/images/x.gif" alt="" />
+                <img src="{{ Vite::asset('resources/images/x.gif') }}" alt="" />
             </div>
         </button>
 
@@ -116,7 +116,7 @@ for ($t = 19; $t <= 40; $t++) {
             echo "<span class='warning'>" . SI_BUILDSTABLEP . "</span>";
         } ?>">
             <div class="button-container addHoverClick">
-                <img src="/assets/images/x.gif" alt="" />
+                <img src="{{ Vite::asset('resources/images/x.gif') }}" alt="" />
             </div>
         </button>
 
@@ -182,7 +182,7 @@ for ($t = 19; $t <= 40; $t++) {
             echo "<span class='warning'>" . SI_BUILDBARRACKS . "</span>";
         } ?>">
             <div class="button-container addHoverClick">
-                <img src="/assets/images/x.gif" alt="" />
+                <img src="{{ Vite::asset('resources/images/x.gif') }}" alt="" />
             </div>
         </button>
 
@@ -249,7 +249,7 @@ for ($t = 19; $t <= 40; $t++) {
         } ?>">
 
             <div class="button-container addHoverClick">
-                <img src="/assets/images/x.gif" alt="" />
+                <img src="{{ Vite::asset('resources/images/x.gif') }}" alt="" />
             </div>
         </button>
 
@@ -322,7 +322,7 @@ for ($t = 19; $t <= 40; $t++) {
     <div class="innerBox footer">
         <button type="button" id="button5229e5255021d" class="layoutButton editWhite green  " onclick="return false;" title="<?php echo SI_CHANGEVILNAME; ?>">
             <div class="button-container addHoverClick">
-                <img src="/assets/images/x.gif" alt="" />
+                <img src="{{ Vite::asset('resources/images/x.gif') }}" alt="" />
             </div>
         </button>
         <script type="text/javascript">
