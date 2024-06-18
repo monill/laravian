@@ -15,9 +15,9 @@ include("templates/Ajax/quest_mentor.php"); ?>
     <div class="sidebarBoxInnerBox">
         <div class="innerBox header ">
             <button id="questmasterButton" title="<?php echo QS_DISPTASK; ?>" class="forceDisplayElement vid_<?php echo $session->tribe; ?>" type="button">
-                <img class="border" alt="" src="/assets/images/x.gif" />
-                <img class="animation" alt="" src="/assets/images/x.gif" />
-                <img class="mentor" alt="" src="/assets/images/x.gif" />
+                <img class="border" src="{{ Vite::asset('resources/images/x.gif') }}" alt="">
+                <img class="animation" src="{{ Vite::asset('resources/images/x.gif') }}" alt="">
+                <img class="mentor" src="{{ Vite::asset('resources/images/x.gif') }}" alt="">
                 <?php if ($_SESSION['qstnew'] == 1 || !isset($_SESSION['qstnew'])) {
                     echo '<div class="bigSpeechBubble newQuestSpeechBubble" title="">
 							<img src="/assets/images/x.gif" alt="">
