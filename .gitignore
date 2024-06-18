@@ -26,3 +26,4 @@ request.py
 storage/installed
 reset.py
 config/models.php
+/resources/images
