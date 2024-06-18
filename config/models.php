@@ -280,6 +280,7 @@ return [
         */
 
         'except' => [
+            'users',
             'migrations',
             'failed_jobs',
             'password_resets',
