@@ -10,7 +10,7 @@
 
             <div id="center">
                 <a id="ingameManual" href="help">
-                    <img class="question" alt="Help" src="/assets/images/x.gif">
+                    <img class="question" alt="Help" src="{{ Vite::asset('resources/images/x.gif') }}">
                 </a>
 
                 <div id="sidebarBeforeContent" class="sidebar beforeContent">
@@ -86,7 +86,7 @@
                                                         </div>
                                                     </div>
                                                     <div class="button-content">The cost of buying
-                                                        <img src="/assets/images/x.gif" class="goldIcon" alt="">
+                                                        <img src="{{ Vite::asset('resources/images/x.gif') }}" class="goldIcon" alt="">
                                                         <span class="goldValue">1</span>
                                                     </div>
                                                 </div>
