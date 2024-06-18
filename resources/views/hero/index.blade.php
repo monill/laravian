@@ -5,11 +5,11 @@
     <div id="background">
         <div id="headerBar"></div>
         <div id="bodyWrapper">
-            <img style="filter:chroma();" src="/assets/images/x.gif" id="msfilter" alt="" />
+            <img style="filter:chroma();" src="{{ Vite::asset('resources/images/x.gif') }}" id="msfilter" alt="" />
             <?php include('templates/Header.php'); ?>
             <div id="center">
                 <a id="ingameManual" href="help.php">
-                    <img class="question" alt="Help" src="/assets/images/x.gif">
+                    <img class="question" alt="Help" src="{{ Vite::asset('resources/images/x.gif') }}">
                 </a>
 
                 <div id="sidebarBeforeContent" class="sidebar beforeContent">
@@ -116,15 +116,15 @@
                                         <div class="br"></div>
                                     </div>
                                     <div class="image">
-                                        <img style="width:254px; height:330px; position:absolute;left:0px;top:0px;" src="<?php echo "/assets/images/hero/" . $gstr; ?>/head/254x330/face0.png" alt="" />
-                                        <img style="width:254px; height:330px; position:absolute;left:0px;top:0px;" src="<?php echo "/assets/images/hero/" . $gstr; ?>/head/254x330/eye/eye<?php echo $geteye; ?>.png" alt="" />
-                                        <img style="width:254px; height:330px; position:absolute;left:0px;top:0px;" src="<?php echo "/assets/images/hero/" . $gstr; ?>/head/254x330/eyebrow/eyebrow<?php echo $geteyebrow . (($gender == 0) ? '-' . $color : ''); ?>.png" alt="" />
-                                        <?php if (!($gender == 0 && $gethair == 5)) { ?><img style="width:254px; height:330px; position:absolute;left:0px;top:0px;" src="<?php echo "/assets/images/hero/" . $gstr; ?>/head/254x330/hair/hair<?php echo $gethair . '-' . $color; ?>.png" alt="" /><?php } ?>
-                                        <img style="width:254px; height:330px; position:absolute;left:0px;top:0px;" src="<?php echo "/assets/images/hero/" . $gstr; ?>/head/254x330/face/face<?php echo $getface; ?>.png" alt="" />
-                                        <img style="width:254px; height:330px; position:absolute;left:0px;top:0px;" src="<?php echo "/assets/images/hero/" . $gstr; ?>/head/254x330/mouth/mouth<?php echo $getmouth; ?>.png" alt="" />
-                                        <img style="width:254px; height:330px; position:absolute;left:0px;top:0px;" src="<?php echo "/assets/images/hero/" . $gstr; ?>/head/254x330/nose/nose<?php echo $getnose; ?>.png" alt="" />
-                                        <img style="width:254px; height:330px; position:absolute;left:0px;top:0px;" src="<?php echo "/assets/images/hero/" . $gstr; ?>/head/254x330/ear/ear<?php echo $getear; ?>.png" alt="" />
-                                        <?php if ($getbeard != 5) { ?><img style="width:254px; height:330px; position:absolute;left:0px;top:0px;" src="<?php echo "/assets/images/hero/" . $gstr; ?>/head/254x330/beard/beard<?php echo $getbeard . '-' . $color; ?>.png" alt="" /><?php } ?>
+                                        <img style="width:254px; height:330px; position:absolute;left:0px;top:0px;" src="<?php echo "..//images/hero/" . $gstr; ?>/head/254x330/face0.png" alt="" />
+                                        <img style="width:254px; height:330px; position:absolute;left:0px;top:0px;" src="<?php echo "../images/hero/" . $gstr; ?>/head/254x330/eye/eye<?php echo $geteye; ?>.png" alt="" />
+                                        <img style="width:254px; height:330px; position:absolute;left:0px;top:0px;" src="<?php echo "../images/hero/" . $gstr; ?>/head/254x330/eyebrow/eyebrow<?php echo $geteyebrow . (($gender == 0) ? '-' . $color : ''); ?>.png" alt="" />
+                                        <?php if (!($gender == 0 && $gethair == 5)) { ?><img style="width:254px; height:330px; position:absolute;left:0px;top:0px;" src="<?php echo "../images/hero/" . $gstr; ?>/head/254x330/hair/hair<?php echo $gethair . '-' . $color; ?>.png" alt="" /><?php } ?>
+                                        <img style="width:254px; height:330px; position:absolute;left:0px;top:0px;" src="<?php echo "../images/hero/" . $gstr; ?>/head/254x330/face/face<?php echo $getface; ?>.png" alt="" />
+                                        <img style="width:254px; height:330px; position:absolute;left:0px;top:0px;" src="<?php echo "../images/hero/" . $gstr; ?>/head/254x330/mouth/mouth<?php echo $getmouth; ?>.png" alt="" />
+                                        <img style="width:254px; height:330px; position:absolute;left:0px;top:0px;" src="<?php echo "../images/hero/" . $gstr; ?>/head/254x330/nose/nose<?php echo $getnose; ?>.png" alt="" />
+                                        <img style="width:254px; height:330px; position:absolute;left:0px;top:0px;" src="<?php echo "../images/hero/" . $gstr; ?>/head/254x330/ear/ear<?php echo $getear; ?>.png" alt="" />
+                                        <?php if ($getbeard != 5) { ?><img style="width:254px; height:330px; position:absolute;left:0px;top:0px;" src="<?php echo "../images/hero/" . $gstr; ?>/head/254x330/beard/beard<?php echo $getbeard . '-' . $color; ?>.png" alt="" /><?php } ?>
                                     </div>
                                 </div>
                                 <div class="attributes">
@@ -150,14 +150,14 @@
                                                         } else {
                                                             echo "class='icon' onclick=\"$('HeroEditorForm').HeroGender.value='0'; $('HeroEditorForm').submit(); return false;\" ";
                                                         } ?> id="heroEditorActivateMale" value="heroEditorActivateMale" type="button">
-                                                            <img alt="heroEditorActivateMale" class="heroEditorActivateMale" src="/assets/images/x.gif">
+                                                            <img alt="heroEditorActivateMale" class="heroEditorActivateMale" src="{{ Vite::asset('resources/images/x.gif') }}">
                                                         </button>
                                                         <button <?php if ($herodetail['gender'] == 1) {
                                                             echo "class=\"icon iconActive disabled\"";
                                                         } else {
                                                             echo "class='icon' onclick=\"$('HeroEditorForm').HeroGender.value='1'; $('HeroEditorForm').submit(); return false;\" ";
                                                         } ?> id="heroEditorActivateFemale" value="heroEditorActivateFemale" type="button">
-                                                            <img alt="heroEditorActivateFemale" class="heroEditorActivateFemale" src="/assets/images/x.gif">
+                                                            <img alt="heroEditorActivateFemale" class="heroEditorActivateFemale" src="{{ Vite::asset('resources/images/x.gif') }}">
                                                         </button>
                                                     </div>
                                                 </div>
@@ -184,13 +184,13 @@
                                                         <div class="clear"></div>
                                                     </div>
                                                     <div class="details">
-                                                        <img id="attribute_button_0" class="attribute" onclick='$("HeroEditorForm").HeroFace.value="0";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/face/face0.png" alt="" />
-                                                        <img id="attribute_button_1" class="attribute" onclick='$("HeroEditorForm").HeroFace.value="1";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/face/face1.png" alt="" />
-                                                        <img id="attribute_button_2" class="attribute" onclick='$("HeroEditorForm").HeroFace.value="2";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/face/face2.png" alt="" />
-                                                        <img id="attribute_button_3" class="attribute" onclick='$("HeroEditorForm").HeroFace.value="3";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/face/face3.png" alt="" />
-                                                        <img id="attribute_button_4" class="attribute" onclick='$("HeroEditorForm").HeroFace.value="4";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/face/face4.png" alt="" />
+                                                        <img id="attribute_button_0" class="attribute" onclick='$("HeroEditorForm").HeroFace.value="0";' src="<?php echo "../images/hero/" . $gstr; ?>/thumb/head/face/face0.png" alt="" />
+                                                        <img id="attribute_button_1" class="attribute" onclick='$("HeroEditorForm").HeroFace.value="1";' src="<?php echo "../images/hero/" . $gstr; ?>/thumb/head/face/face1.png" alt="" />
+                                                        <img id="attribute_button_2" class="attribute" onclick='$("HeroEditorForm").HeroFace.value="2";' src="<?php echo "../images/hero/" . $gstr; ?>/thumb/head/face/face2.png" alt="" />
+                                                        <img id="attribute_button_3" class="attribute" onclick='$("HeroEditorForm").HeroFace.value="3";' src="<?php echo "../images/hero/" . $gstr; ?>/thumb/head/face/face3.png" alt="" />
+                                                        <img id="attribute_button_4" class="attribute" onclick='$("HeroEditorForm").HeroFace.value="4";' src="<?php echo "../images/hero/" . $gstr; ?>/thumb/head/face/face4.png" alt="" />
                                                         <?php if ($herodetail['gender'] == 1) { ?>
-                                                        <img id="attribute_button_5" class="attribute" onclick='$("HeroEditorForm").HeroFace.value="5";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/face/face5.png" alt="" />
+                                                        <img id="attribute_button_5" class="attribute" onclick='$("HeroEditorForm").HeroFace.value="5";' src="<?php echo "../images/hero/" . $gstr; ?>/thumb/head/face/face5.png" alt="" />
                                                         <?php } ?>
                                                         <div class="clear"></div>
                                                     </div>
@@ -201,11 +201,11 @@
                                                         <div class="clear"></div>
                                                     </div>
                                                     <div class="details">
-                                                        <img id="attribute_button_0" class="attribute" onclick='$("HeroEditorForm").color.value="0";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/hair/color0.png" alt="" />
-                                                        <img id="attribute_button_1" class="attribute" onclick='$("HeroEditorForm").color.value="1";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/hair/color1.png" alt="" />
-                                                        <img id="attribute_button_2" class="attribute" onclick='$("HeroEditorForm").color.value="2";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/hair/color2.png" alt="" />
-                                                        <img id="attribute_button_3" class="attribute" onclick='$("HeroEditorForm").color.value="3";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/hair/color3.png" alt="" />
-                                                        <img id="attribute_button_4" class="attribute" onclick='$("HeroEditorForm").color.value="4";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/hair/color4.png" alt="" />
+                                                        <img id="attribute_button_0" class="attribute" onclick='$("HeroEditorForm").color.value="0";' src="<?php echo "../images/hero/" . $gstr; ?>/thumb/head/hair/color0.png" alt="" />
+                                                        <img id="attribute_button_1" class="attribute" onclick='$("HeroEditorForm").color.value="1";' src="<?php echo "../images/hero/" . $gstr; ?>/thumb/head/hair/color1.png" alt="" />
+                                                        <img id="attribute_button_2" class="attribute" onclick='$("HeroEditorForm").color.value="2";' src="<?php echo "../images/hero/" . $gstr; ?>/thumb/head/hair/color2.png" alt="" />
+                                                        <img id="attribute_button_3" class="attribute" onclick='$("HeroEditorForm").color.value="3";' src="<?php echo "../images/hero/" . $gstr; ?>/thumb/head/hair/color3.png" alt="" />
+                                                        <img id="attribute_button_4" class="attribute" onclick='$("HeroEditorForm").color.value="4";' src="<?php echo "../images/hero/" . $gstr; ?>/thumb/head/hair/color4.png" alt="" />
                                                         <div class="clear"></div>
                                                     </div>
                                                 </div>
@@ -215,16 +215,16 @@
                                                         <div class="clear"></div>
                                                     </div>
                                                     <div class="details">
-                                                        <img id="attribute_button_0" class="attribute" onclick='$("HeroEditorForm").HeroHair.value="0";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/hair/hair0.png" alt="" />
-                                                        <img id="attribute_button_1" class="attribute" onclick='$("HeroEditorForm").HeroHair.value="1";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/hair/hair1.png" alt="" />
-                                                        <img id="attribute_button_2" class="attribute" onclick='$("HeroEditorForm").HeroHair.value="2";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/hair/hair2.png" alt="" />
-                                                        <img id="attribute_button_3" class="attribute" onclick='$("HeroEditorForm").HeroHair.value="3";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/hair/hair3.png" alt="" />
-                                                        <img id="attribute_button_4" class="attribute" onclick='$("HeroEditorForm").HeroHair.value="4";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/hair/hair4.png" alt="" />
+                                                        <img id="attribute_button_0" class="attribute" onclick='$("HeroEditorForm").HeroHair.value="0";' src="<?php echo "../images/hero/" . $gstr; ?>/thumb/head/hair/hair0.png" alt="" />
+                                                        <img id="attribute_button_1" class="attribute" onclick='$("HeroEditorForm").HeroHair.value="1";' src="<?php echo "../images/hero/" . $gstr; ?>/thumb/head/hair/hair1.png" alt="" />
+                                                        <img id="attribute_button_2" class="attribute" onclick='$("HeroEditorForm").HeroHair.value="2";' src="<?php echo "..//images/hero/" . $gstr; ?>/thumb/head/hair/hair2.png" alt="" />
+                                                        <img id="attribute_button_3" class="attribute" onclick='$("HeroEditorForm").HeroHair.value="3";' src="<?php echo "..//images/hero/" . $gstr; ?>/thumb/head/hair/hair3.png" alt="" />
+                                                        <img id="attribute_button_4" class="attribute" onclick='$("HeroEditorForm").HeroHair.value="4";' src="<?php echo "..//images/hero/" . $gstr; ?>/thumb/head/hair/hair4.png" alt="" />
                                                         <?php if ($herodetail['gender'] == 0) { ?>
-                                                        <img id="attribute_button_5" class="attribute" onclick='$("HeroEditorForm").HeroHair.value="5";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/hair/hairNone.png" alt="" />
+                                                        <img id="attribute_button_5" class="attribute" onclick='$("HeroEditorForm").HeroHair.value="5";' src="<?php echo "..//images/hero/" . $gstr; ?>/thumb/head/hair/hairNone.png" alt="" />
                                                         <?php } ?>
                                                         <?php if ($herodetail['gender'] == 1) { ?>
-                                                        <img id="attribute_button_5" class="attribute" onclick='$("HeroEditorForm").HeroHair.value="5";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/hair/hair5.png" alt="" />
+                                                        <img id="attribute_button_5" class="attribute" onclick='$("HeroEditorForm").HeroHair.value="5";' src="<?php echo "..//images/hero/" . $gstr; ?>/thumb/head/hair/hair5.png" alt="" />
                                                         <?php } ?>
                                                         <div class="clear"></div>
                                                     </div>
@@ -236,15 +236,15 @@
                                                         <div class="clear"></div>
                                                     </div>
                                                     <div class="details">
-                                                        <img id="attribute_button_0" class="attribute" onclick='$("HeroEditorForm").HeroEar.value="0";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/ear/ear0.png" alt="" />
-                                                        <img id="attribute_button_1" class="attribute" onclick='$("HeroEditorForm").HeroEar.value="1";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/ear/ear1.png" alt="" />
-                                                        <img id="attribute_button_2" class="attribute" onclick='$("HeroEditorForm").HeroEar.value="2";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/ear/ear2.png" alt="" />
-                                                        <img id="attribute_button_3" class="attribute" onclick='$("HeroEditorForm").HeroEar.value="3";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/ear/ear3.png" alt="" />
-                                                        <img id="attribute_button_4" class="attribute" onclick='$("HeroEditorForm").HeroEar.value="4";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/ear/ear4.png" alt="" />
+                                                        <img id="attribute_button_0" class="attribute" onclick='$("HeroEditorForm").HeroEar.value="0";' src="<?php echo "..//images/hero/" . $gstr; ?>/thumb/head/ear/ear0.png" alt="" />
+                                                        <img id="attribute_button_1" class="attribute" onclick='$("HeroEditorForm").HeroEar.value="1";' src="<?php echo "..//images/hero/" . $gstr; ?>/thumb/head/ear/ear1.png" alt="" />
+                                                        <img id="attribute_button_2" class="attribute" onclick='$("HeroEditorForm").HeroEar.value="2";' src="<?php echo "..//images/hero/" . $gstr; ?>/thumb/head/ear/ear2.png" alt="" />
+                                                        <img id="attribute_button_3" class="attribute" onclick='$("HeroEditorForm").HeroEar.value="3";' src="<?php echo "..//images/hero/" . $gstr; ?>/thumb/head/ear/ear3.png" alt="" />
+                                                        <img id="attribute_button_4" class="attribute" onclick='$("HeroEditorForm").HeroEar.value="4";' src="<?php echo "..//images/hero/" . $gstr; ?>/thumb/head/ear/ear4.png" alt="" />
                                                         <?php if ($herodetail['gender'] == 1) { ?>
-                                                        <img id="attribute_button_5" class="attribute" onclick='$("HeroEditorForm").HeroEar.value="5";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/ear/ear5.png" alt="" />
-                                                        <img id="attribute_button_6" class="attribute" onclick='$("HeroEditorForm").HeroEar.value="6";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/ear/ear6.png" alt="" />
-                                                        <img id="attribute_button_7" class="attribute" onclick='$("HeroEditorForm").HeroEar.value="7";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/ear/ear7.png" alt="" />
+                                                        <img id="attribute_button_5" class="attribute" onclick='$("HeroEditorForm").HeroEar.value="5";' src="<?php echo "..//images/hero/" . $gstr; ?>/thumb/head/ear/ear5.png" alt="" />
+                                                        <img id="attribute_button_6" class="attribute" onclick='$("HeroEditorForm").HeroEar.value="6";' src="<?php echo "..//images/hero/" . $gstr; ?>/thumb/head/ear/ear6.png" alt="" />
+                                                        <img id="attribute_button_7" class="attribute" onclick='$("HeroEditorForm").HeroEar.value="7";' src="<?php echo "..//images/hero/" . $gstr; ?>/thumb/head/ear/ear7.png" alt="" />
                                                         <?php } ?>
                                                         <div class="clear"></div>
                                                     </div>
@@ -256,18 +256,18 @@
                                                         <div class="clear"></div>
                                                     </div>
                                                     <div class="details">
-                                                        <img id="attribute_button_0" class="attribute" onclick='$("HeroEditorForm").HeroEyebrow.value="0";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/eyebrow/eyebrow0.png" alt="" />
-                                                        <img id="attribute_button_1" class="attribute" onclick='$("HeroEditorForm").HeroEyebrow.value="1";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/eyebrow/eyebrow1.png" alt="" />
-                                                        <img id="attribute_button_2" class="attribute" onclick='$("HeroEditorForm").HeroEyebrow.value="2";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/eyebrow/eyebrow2.png" alt="" />
-                                                        <img id="attribute_button_3" class="attribute" onclick='$("HeroEditorForm").HeroEyebrow.value="3";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/eyebrow/eyebrow3.png" alt="" />
-                                                        <img id="attribute_button_4" class="attribute" onclick='$("HeroEditorForm").HeroEyebrow.value="4";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/eyebrow/eyebrow4.png" alt="" />
+                                                        <img id="attribute_button_0" class="attribute" onclick='$("HeroEditorForm").HeroEyebrow.value="0";' src="<?php echo "..//images/hero/" . $gstr; ?>/thumb/head/eyebrow/eyebrow0.png" alt="" />
+                                                        <img id="attribute_button_1" class="attribute" onclick='$("HeroEditorForm").HeroEyebrow.value="1";' src="<?php echo "..//images/hero/" . $gstr; ?>/thumb/head/eyebrow/eyebrow1.png" alt="" />
+                                                        <img id="attribute_button_2" class="attribute" onclick='$("HeroEditorForm").HeroEyebrow.value="2";' src="<?php echo "..//images/hero/" . $gstr; ?>/thumb/head/eyebrow/eyebrow2.png" alt="" />
+                                                        <img id="attribute_button_3" class="attribute" onclick='$("HeroEditorForm").HeroEyebrow.value="3";' src="<?php echo "..//images/hero/" . $gstr; ?>/thumb/head/eyebrow/eyebrow3.png" alt="" />
+                                                        <img id="attribute_button_4" class="attribute" onclick='$("HeroEditorForm").HeroEyebrow.value="4";' src="<?php echo "..//images/hero/" . $gstr; ?>/thumb/head/eyebrow/eyebrow4.png" alt="" />
                                                         <?php
                                                         if ($herodetail['gender'] == 1) { ?>
-                                                        <img id="attribute_button_5" class="attribute" onclick='$("HeroEditorForm").HeroEyebrow.value="5";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/eyebrow/eyebrow5.png" alt="" />
-                                                        <img id="attribute_button_6" class="attribute" onclick='$("HeroEditorForm").HeroEyebrow.value="6";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/eyebrow/eyebrow6.png" alt="" />
-                                                        <img id="attribute_button_7" class="attribute" onclick='$("HeroEditorForm").HeroEyebrow.value="7";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/eyebrow/eyebrow7.png" alt="" />
-                                                        <img id="attribute_button_8" class="attribute" onclick='$("HeroEditorForm").HeroEyebrow.value="8";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/eyebrow/eyebrow8.png" alt="" />
-                                                        <img id="attribute_button_9" class="attribute" onclick='$("HeroEditorForm").HeroEyebrow.value="9";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/eyebrow/eyebrow9.png" alt="" />
+                                                        <img id="attribute_button_5" class="attribute" onclick='$("HeroEditorForm").HeroEyebrow.value="5";' src="<?php echo "..//images/hero/" . $gstr; ?>/thumb/head/eyebrow/eyebrow5.png" alt="" />
+                                                        <img id="attribute_button_6" class="attribute" onclick='$("HeroEditorForm").HeroEyebrow.value="6";' src="<?php echo "..//images/hero/" . $gstr; ?>/thumb/head/eyebrow/eyebrow6.png" alt="" />
+                                                        <img id="attribute_button_7" class="attribute" onclick='$("HeroEditorForm").HeroEyebrow.value="7";' src="<?php echo "..//images/hero/" . $gstr; ?>/thumb/head/eyebrow/eyebrow7.png" alt="" />
+                                                        <img id="attribute_button_8" class="attribute" onclick='$("HeroEditorForm").HeroEyebrow.value="8";' src="<?php echo "..//images/hero/" . $gstr; ?>/thumb/head/eyebrow/eyebrow8.png" alt="" />
+                                                        <img id="attribute_button_9" class="attribute" onclick='$("HeroEditorForm").HeroEyebrow.value="9";' src="<?php echo "..//images/hero/" . $gstr; ?>/thumb/head/eyebrow/eyebrow9.png" alt="" />
                                                         <?php } ?>
                                                         <div class="clear"></div>
                                                     </div>
@@ -279,8 +279,8 @@
                                                         <div class="clear"></div>
                                                     </div>
                                                     <div class="details">
-                                                        <img id="attribute_button_0" class="attribute" onclick='$("HeroEditorForm").HeroEye.value="0";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/eye/eye0.png" alt="" />
-                                                        <img id="attribute_button_1" class="attribute" onclick='$("HeroEditorForm").HeroEye.value="1";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/eye/eye1.png" alt="" />
+                                                        <img id="attribute_button_0" class="attribute" onclick='$("HeroEditorForm").HeroEye.value="0";' src="<?php echo "..//images/hero/" . $gstr; ?>/thumb/head/eye/eye0.png" alt="" />
+                                                        <img id="attribute_button_1" class="attribute" onclick='$("HeroEditorForm").HeroEye.value="1";' src="<?php echo "..//images/hero/" . $gstr; ?>/thumb/head/eye/eye1.png" alt="" />
                                                         <img id="attribute_button_2" class="attribute" onclick='$("HeroEditorForm").HeroEye.value="2";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/eye/eye2.png" alt="" />
                                                         <img id="attribute_button_3" class="attribute" onclick='$("HeroEditorForm").HeroEye.value="3";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/eye/eye3.png" alt="" />
                                                         <img id="attribute_button_4" class="attribute" onclick='$("HeroEditorForm").HeroEye.value="4";' src="<?php echo "/assets/images/hero/" . $gstr; ?>/thumb/head/eye/eye4.png" alt="" />
