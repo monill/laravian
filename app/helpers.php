@@ -57,3 +57,17 @@ if (!function_exists('setting')) {
 function active($url) {
     return request()->is($url) ? 'active' : '';
 }
+
+function getTimeFormat($sec)
+{
+    $hr = floor($sec / 3600);
+    $sec %= 3600;
+    $min = floor($sec / 60);
+    $sec %= 60;
+
+    // Add a leading zero if minute or second is less than 10
+    $min = str_pad($min, 2, "0", STR_PAD_LEFT);
+    $sec = str_pad($sec, 2, "0", STR_PAD_LEFT);
+
+    return "{$hr}:{$min}:{$sec}";
+}
