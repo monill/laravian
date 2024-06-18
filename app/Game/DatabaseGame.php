@@ -102,10 +102,10 @@ class DatabaseGame
                 $data[$field] = $value;
                 break;
             case 1:
-                $data[$field] = DB::raw("`$field` + $value");
+                $data[$field] = DB::raw("$field + $value");
                 break;
             case 2:
-                $data[$field] = DB::raw("`$field` - $value");
+                $data[$field] = DB::raw("$field - $value");
                 break;
         }
 
@@ -119,12 +119,12 @@ class DatabaseGame
 
     public function getSitee1($userID)
     {
-        return $this->conn->select('`id`,`username`,`sit1`')->from('users')->where('sit1 = :uid', ['uid' => $userID])->get();
+        return $this->conn->select('id,username,sit1')->from('users')->where('sit1 = :uid', ['uid' => $userID])->get();
     }
 
     public function getSitee2($userID)
     {
-        return $this->conn->select('`id`,`username`,`sit2`')->from('users')->where('sit2 = :uid', ['uid' => $userID])->get();
+        return $this->conn->select('id,username,sit2')->from('users')->where('sit2 = :uid', ['uid' => $userID])->get();
     }
 
     public function removeMeSit($userID, $userID2)
@@ -232,8 +232,11 @@ class DatabaseGame
 
     public function isDeleting($userID)
     {
-        $result = $this->conn->select('timestamp')->from('deleting')->where('uid = :uid', ['uid' => $userID])->first();
-        return $result['timestamp'];
+        $result = DB::table('deleting')
+            ->select('timestamp')
+            ->where('user_id', $userID)
+            ->first();
+        return $result->timestamp ?? null;
     }
 
     public function modifyGold($userID, $amount, $mode)
@@ -305,7 +308,7 @@ class DatabaseGame
 
     public function getUserWithEmail($email)
     {
-        return $this->conn->select('`id`,`username`')->from('users')->where('email = :email', ['email' => $email])->limit(1)->first();
+        return $this->conn->select('id,username')->from('users')->where('email = :email', ['email' => $email])->limit(1)->first();
     }
 
     public function activeModify($username, $mode)
@@ -396,13 +399,9 @@ class DatabaseGame
         return $troops;
     }
 
-    public function getResourceLevel($vid)
+    public function getResourceLevel($worldID)
     {
-        return $this->conn
-            ->select('*')
-            ->from('fdata')
-            ->where('vref = :vref', ['vref' => $vid])
-            ->get();
+        return DB::table('fields')->where('world_id', $worldID)->first();
     }
 
     public function VillageOasisCount($vref)
@@ -412,12 +411,12 @@ class DatabaseGame
 
     public function getOasisInfo($worldID)
     {
-        return $this->conn->select('`conqured`,`loyalty`')->from('odata')->where('`wref` = :wref', ['wref' => $worldID])->limit(1)->first();
+        return $this->conn->select('conqured,loyalty')->from('odata')->where('wref = :wref', ['wref' => $worldID])->limit(1)->first();
     }
 
     public function getCoor($worldID)
     {
-        return $this->conn->select('x, y')->from('wdata')->where('id = :id', ['id' => $worldID])->limit(1)->first();
+        return DB::table('worlds')->select('x', 'y')->where('id', $worldID)->first();
     }
 
     public function conquerOasis($vref, $worldID)
@@ -436,13 +435,9 @@ class DatabaseGame
         $this->conn->upgrade('odata', $data, 'wref = :wref', ['wref' => $worldID]);
     }
 
-    public function getVillage($vid)
+    public function getVillage($worldID)
     {
-        return $this->conn
-            ->select()
-            ->from('vdata')
-            ->where('wref = :vid', ['vid' => $vid])
-            ->get();
+        return DB::table('villages')->where('world_id', $worldID)->first();
     }
 
     public function modifyOasisLoyalty($worldID)
@@ -697,7 +692,7 @@ class DatabaseGame
     public function getVillageStateForSettle($worldID)
     {
         $result = $this->conn
-            ->select('`oasistype`,`is_occupied`,`fieldtype`')
+            ->select('oasistype,is_occupied,fieldtype')
             ->from('wdata')
             ->where('id = :id', ['id' => $worldID])
             ->limit(1)
@@ -712,7 +707,7 @@ class DatabaseGame
     public function getProfileVillages($userID)
     {
         return $this->conn
-            ->select('`wref`,`maxstore`,`maxcrop`,`pop`,`name`,`capital`')
+            ->select('wref,maxstore,maxcrop,pop,name,capital')
             ->from('vdata')
             ->where('owner = :owner', ['owner' => $userID])
             ->orderByDesc('pop')
@@ -790,13 +785,13 @@ class DatabaseGame
             $where .= " AND {$list['extra']} ";
         }
 
-        return $this->conn->select('`id`')->from('wdata')->where($where, $params)->get();
+        return $this->conn->select('id')->from('wdata')->where($where, $params)->get();
     }
 
     public function getOasisV($vid)
     {
         return $this->conn
-            ->select('`wref`')
+            ->select('wref')
             ->from('odata')
             ->where('wref = :wref', ['wref' => $vid])
             ->limit(1)
@@ -806,7 +801,7 @@ class DatabaseGame
     public function getAInfo($id)
     {
         return $this->conn
-            ->select('`x`,`y`')
+            ->select('x,y')
             ->from('wdata')
             ->where('id = :id', ['id' => $id])
             ->limit(1)
@@ -884,7 +879,7 @@ class DatabaseGame
     public function lastTopic($id)
     {
         return $this->conn
-            ->select('`id`')
+            ->select('id')
             ->from('forum_topic')
             ->where('cat = :cat', ['cat' => $id])
             ->orderByDesc('post_date')
@@ -914,7 +909,7 @@ class DatabaseGame
             return false;
         }
 
-        $rows = $this->conn->select('`tag`')
+        $rows = $this->conn->select('tag')
             ->from('alidata')
             ->where('id = :aid', ['aid' => $aid])
             ->get();
@@ -947,7 +942,7 @@ class DatabaseGame
 
     public function lastPost($id)
     {
-        return $this->conn->select('`date`,`owner`')
+        return $this->conn->select('date,owner')
             ->from('forum_post')
             ->where('topic = :topic', ['topic' => $id])
             ->get();
@@ -1209,7 +1204,7 @@ class DatabaseGame
     {
         $forum = $this->conn->select('forum_area')->from('forum_cat')->where('id = :id', ['id' => $id])->first();
         if ($mode == '-1') {
-            $result1 = $this->conn->select('`id`')->from('forum_cat')->where('forum_area = :area AND id < :id', ['area' => $forum['forum_area'], 'id' => $id])->orderByDesc('id')->first();
+            $result1 = $this->conn->select('id')->from('forum_cat')->where('forum_area = :area AND id < :id', ['area' => $forum['forum_area'], 'id' => $id])->orderByDesc('id')->first();
             if ($result1) {
                 $this->conn->upgrade('forum_cat', ['id' => 0], 'id = :id', ['id' => $result1['id']]);
                 $this->conn->upgrade('forum_cat', ['id' => -1], 'id = :id', ['id' => $id]);
@@ -1577,7 +1572,7 @@ class DatabaseGame
     public function getCel()
     {
         return $this->conn
-            ->select('`wref`,`type`,`owner`')
+            ->select('wref,type,owner')
             ->from('vdata')
             ->where('celebration < :time AND celebration != 0', ['time' => time()])
             ->get();
@@ -1798,7 +1793,7 @@ class DatabaseGame
 
     public function getNoticeReportBox($userID)
     {
-        $result = $this->conn->select('COUNT(`id`) as maxreport')
+        $result = $this->conn->select('COUNT(id) as maxreport')
             ->from('ndata')
             ->where('uid = :uid', ['uid' => $userID])
             ->orderByDesc('time')
@@ -1935,7 +1930,7 @@ class DatabaseGame
     public function getDemolition($worldID = 0)
     {
         $conditions = ($worldID) ? ['vref' => $worldID] : 'timetofinish <= ' . time();
-        return $this->conn->select('`vref`,`buildnumber`,`timetofinish`')
+        return $this->conn->select('vref,buildnumber,timetofinish')
             ->from('demolition')
             ->where($conditions)
             ->get();
@@ -1953,11 +1948,7 @@ class DatabaseGame
 
     public function getJobs($worldID)
     {
-        return $this->conn->select('*')
-            ->from('bdata')
-            ->where('wid = :wid', ['wid' => $worldID])
-            ->orderByAsc('id')
-            ->get();
+        return DB::table('buildings')->where('world_id', $worldID)->orderBy('id', 'ASC')->get();
     }
 
     public function finishWoodCutter($worldID)
@@ -1972,10 +1963,10 @@ class DatabaseGame
 
     public function finishCropLand($worldID)
     {
-        $result1 = $this->conn->select('`id`,`timestamp`')->from('bdata')->where('wid = :wid AND type = 4', ['wid' => $worldID])->order('ORDER BY master, timestamp ASC')->first();
+        $result1 = $this->conn->select('id,timestamp')->from('bdata')->where('wid = :wid AND type = 4', ['wid' => $worldID])->order('ORDER BY master, timestamp ASC')->first();
         $this->conn->upgrade('bdata', ['timestamp' => time() - 1], 'id = :id', ['id' => $result1['id']]);
 
-        $result2 = $this->conn->select('`id`')->from('bdata')->where('wid = :wid AND loopcon = 1 AND field <= 18', ['wid' => $worldID])->order('ORDER BY master, timestamp ASC')->first();
+        $result2 = $this->conn->select('id')->from('bdata')->where('wid = :wid AND loopcon = 1 AND field <= 18', ['wid' => $worldID])->order('ORDER BY master, timestamp ASC')->first();
         $this->conn->upgrade('bdata', ['timestamp' => $result2['timestamp'] - time()], 'id = :id', ['id' => $result2['id']]);
     }
 
@@ -1994,7 +1985,7 @@ class DatabaseGame
 
     public function getMasterJobs($worldID)
     {
-        return $this->conn->select('`id`')
+        return $this->conn->select('id')
             ->from('bdata')
             ->where('wid = :wid AND master = 1', ['wid' => $worldID])
             ->order('ORDER BY master, timestamp ASC')
@@ -2003,24 +1994,28 @@ class DatabaseGame
 
     public function getBuildingByField($worldID, $field)
     {
-        return $this->conn->select('`id`')
-            ->from('bdata')
-            ->where('wid = :wid AND field = :field AND master = 0', ['wid' => $worldID, 'field' => $field])
+        return DB::table('buildings')
+            ->select('id')
+            ->where('world_id', $worldID)
+            ->where('field', $field)
+            ->where('master', 0)
             ->get();
     }
 
     public function getBuildingByType($worldID, $type)
     {
-        return $this->conn->select('`id`')
-            ->from('bdata')
-            ->where('wid = :wid AND type = :type AND master = 0', ['wid' => $worldID, 'type' => $type])
-            ->order('ORDER BY master, timestamp ASC')
+        return DB::table('buildings')
+            ->select('id')
+            ->where('world_id', $worldID)
+            ->where('type', $type)
+            ->where('master', false)
+            ->orderBy('master, timestamp', 'ASC')
             ->get();
     }
 
     public function getDorf1Building($worldID)
     {
-        return $this->conn->select('`timestamp`')
+        return $this->conn->select('timestamp')
             ->from('bdata')
             ->where('wid = :wid AND field < 19 AND master = 0', ['wid' => $worldID])
             ->get();
@@ -2028,7 +2023,7 @@ class DatabaseGame
 
     public function getDorf2Building($worldID)
     {
-        return $this->conn->select('`timestamp`')
+        return $this->conn->select('timestamp')
             ->from('bdata')
             ->where('wid = :wid AND field > 18 AND master = 0', ['wid' => $worldID])
             ->get();
@@ -2200,7 +2195,7 @@ class DatabaseGame
      */
     public function getMarketInfo($id)
     {
-        return $this->conn->select('`vref`,`gtype`,`wtype`,`merchant`,`wamt`')
+        return $this->conn->select('vref,gtype,wtype,merchant,wamt')
             ->from('market')
             ->where('id = :id', ['id' => $id])
             ->first();
@@ -2225,7 +2220,7 @@ class DatabaseGame
 
     public function getMovementById($id)
     {
-        return $this->conn->select('`starttime`,`to`,`from`')->from('movement')->where('moveid = :moveid', ['moveid' => $id])->get();
+        return $this->conn->select('starttime,to,from')->from('movement')->where('moveid = :moveid', ['moveid' => $id])->get();
     }
 
     public function cancelMovement($id, $newfrom, $newto)
@@ -2266,7 +2261,7 @@ class DatabaseGame
 
     public function getAdvMovement($village)
     {
-        return $this->conn->select('`moveid`')
+        return $this->conn->select('moveid')
             ->from('movement')
             ->where('movement.from = :from AND sort_type = 9', ['from' => $village])
             ->get();
@@ -2274,7 +2269,7 @@ class DatabaseGame
 
     public function getCompletedAdvMovement($village)
     {
-        return $this->conn->select('`moveid`')
+        return $this->conn->select('moveid')
             ->from('movement')
             ->where('movement.from = :from AND sort_type = 9 AND proc = 1', ['from' => $village])
             ->get();
@@ -2358,7 +2353,7 @@ class DatabaseGame
             $params['wid'] = $worldID;
         }
 
-        return $this->conn->select('`id`')
+        return $this->conn->select('id')
             ->from('bdata')
             ->where($where, $params)
             ->get();
@@ -2382,7 +2377,7 @@ class DatabaseGame
 
     public function getHeroRanking($limit = '')
     {
-        return $this->conn->select('`uid`,`level`,`experience`')
+        return $this->conn->select('uid,level,experience')
             ->from('hero')
             ->orderByDesc('experience')
             ->limit($limit)
@@ -2391,19 +2386,16 @@ class DatabaseGame
 
     public function getAllMember($aid)
     {
-        return $this->conn->select('`id`,`username`,`timestamp`')
+        return $this->conn->select('id,username,timestamp')
             ->from('users')
             ->where('alliance = :alliance', ['alliance' => $aid])
             ->orderBy('(SELECT SUM(pop) FROM vdata WHERE owner = users.id)', 'DESC')
             ->get();
     }
 
-    public function getUnit($vid)
+    public function getUnit($worldID)
     {
-        return $this->conn->select('*')
-            ->from('units')
-            ->where('vref = :vref', ['vref' => $vid])
-            ->first();
+        return DB::table('units')->where('world_id', $worldID)->first();
     }
 
     public function getHUnit($vid)
@@ -2485,9 +2477,9 @@ class DatabaseGame
         DB::table('abdata')->insert(['world_id' => $worldID]);
     }
 
-    public function getABTech($vid)
+    public function getABTech($worldID)
     {
-        return $this->conn->select('*')->from('abdata')->where('vref = :vref', ['vref' => $vid])->first();
+        return DB::table('abdata')->where('world_id', $worldID)->first();
     }
 
     public function addResearch($vid, $tech, $time)
@@ -2500,9 +2492,9 @@ class DatabaseGame
         $this->conn->insert('research', $data);
     }
 
-    public function getResearching($vid)
+    public function getResearching($worldID)
     {
-        return $this->$this->conn->select('*')->from('research')->where('vref = :vref', ['vref' => $vid])->get();
+        return DB::table('researches')->where('world_id', $worldID)->get();
     }
 
     public function checkIfResearched($vref, $unit)
@@ -2511,14 +2503,14 @@ class DatabaseGame
         return $result[$unit];
     }
 
-    public function getTech($vid)
+    public function getTech($worldID)
     {
-        return $this->conn->select('*')->from('tdata')->where('vref = :vid', ['vid' => $vid])->first();
+        return DB::table('technologies')->where('world_id', $worldID)->first();
     }
 
     public function getTraining($vid)
     {
-        return $this->conn->select('`amt`,`unit`,`endat`,`commence`,`id`,`vref`,`pop`,`timestamp`,`eachtime`')
+        return $this->conn->select('amt,unit,endat,commence,id,vref,pop,timestamp,eachtime')
             ->from('training')
             ->where('vref = :vref'. ['vref' => $vid])
             ->orderByDesc('id')
@@ -2576,7 +2568,7 @@ class DatabaseGame
 
     public function getHeroTrain($vid)
     {
-        return $this->conn->select('`id`,`eachtime`')
+        return $this->conn->select('id,eachtime')
             ->from('training')
             ->where('vref = :vref AND unit = 0', ['vref' => $vid])
             ->first();
@@ -2619,7 +2611,7 @@ class DatabaseGame
                 DB::table('units')->where('world_id', $worldID)->increment($unit, $amount);
                 break;
             case 2:
-                DB::table('units')->where('world_id', $worldID)->update([$unit => DB::raw("`$unit` + $amount")]);
+                DB::table('units')->where('world_id', $worldID)->update([$unit => DB::raw("$unit + $amount")]);
                 break;
         }
     }
@@ -2648,14 +2640,14 @@ class DatabaseGame
         return $this->conn->select('*')->from('trapped')->where('id = :id', ['id' => $id])->first();
     }
 
-    public function getTrappedIn($vref)
+    public function getTrappedIn($worldID)
     {
-        return $this->conn->select('*')->from('trapped')->where('vref = :vref', ['vref' => $vref])->first();
+        return DB::table('trapped')->where('to_world_id', $worldID)->first();
     }
 
-    public function getTrappedFrom($from)
+    public function getTrappedFrom($worldID)
     {
-        return $this->conn->select('*')->from('trapped')->where('from = :from', ['from' => $from])->first();
+        return DB::table('trapped')->where('from_world_id', $worldID)->first();
     }
 
     public function addTrapped($vref, $from)
@@ -2759,82 +2751,110 @@ class DatabaseGame
 
     public function addHeroEnforce($data)
     {
-        $this->conn->insert('enforcement', ['vref' => $data['to'], '`from`' => $data['from'], 'hero' => 1]);
+        $this->conn->insert('enforcement', ['vref' => $data['to'], 'from' => $data['from'], 'hero' => 1]);
     }
 
     public function getEnforceArray($id, $mode)
     {
-        $column = !$mode ? '`id`' : '`from`';
+        $column = !$mode ? 'id' : 'from';
         return $this->conn->select('*')->from('enforcement')->where("$column = :ref", ['ref' => $id])->first();
     }
 
-    public function getEnforceVillage($id, $mode)
+    public function getEnforceVillage($worldID, $mode)
     {
-        $column = !$mode ? 'vref' : 'from';
-        return $this->conn->select('*')->from('enforcement')->where("$column = :ref", ['ref' => $id])->get();
+        $column = !$mode ? 'from_world_id' : 'to_world_id';
+        return DB::table('enforcements')->where($column, $worldID)->first();
     }
 
     public function getOasesEnforce($id)
     {
         $oasisowned = $this->getOasis($id);
-        if (!empty($oasisowned) && count($oasisowned) > 0) {
+        if (!empty($oasisowned)) {
             $inos = '(';
             foreach ($oasisowned as $oo) {
-                $inos .= $oo['wref'] . ',';
+                $inos .= $oo['world_id'] . ',';
             }
             $inos = substr($inos, 0, strlen($inos) - 1);
             $inos .= ')';
 
-            return $this->conn->select('*')->from('enforcement')->where('`from` = :from AND `vref` IN :vref', ['from' => $id, 'vref' => $inos])->get();
+            return DB::table('enforcements')
+                ->where('from_world_id', $id)
+                ->whereIn('to_world_id', $inos)
+                ->get();
         } else {
             return null;
         }
     }
 
-    public function getOasis($vid)
+    public function getOasis($worldID)
     {
-        return $this->conn->select('`type`,`wref`')->from('odata')->where('`conqured` = :conqured', ['conqured' => $vid])->get();
+        return DB::table('oases')->select('type', 'world_id')->where('world_id', $worldID)->first();
     }
 
-    public function getVillageMovement($id)
+    public function getVillageMovement($villageID)
     {
-        $vinfo = $this->getVillage($id);
-        if (isset($vinfo['owner'])) {
-            $vtribe = $this->getUserField($vinfo['owner'], 'tribe', 0);
-            $movingunits = array();
-            $outgoingarray = $this->getMovement(3, $id, 0);
-            for ($i = 1; $i <= 10; $i++) $movingunits['u' . (($vtribe - 1) * 10 + $i)] = 0;
-            $movingunits['hero'] = 0;
-            if (!empty($outgoingarray)) {
-                foreach ($outgoingarray as $out) {
-                    for ($i = 1; $i <= 10; $i++) {
-                        $movingunits['u' . (($vtribe - 1) * 10 + $i)] += $out['t' . $i];
-                    }
-                    $movingunits['hero'] += $out['t11'];
-                }
-            }
-            $returning = $this->getMovement(4, $id, 1);
-            if (!empty($returning)) {
-                foreach ($returning as $ret) {
-                    if ($ret['attack_type'] != 1) {
-                        for ($i = 1; $i <= 10; $i++) {
-                            $movingunits['u' . (($vtribe - 1) * 10 + $i)] += $ret["t{$i}"];
-                        }
-                        $movingunits['hero'] += $ret['t11'];
-                    }
-                }
-            }
-            $settlerarray = $this->getMovement(5, $id, 0);
-            if (!empty($settlerarray)) {
-                $movingunits['u' . ($vtribe * 10)] += 3 * count($settlerarray);
-            }
-            $advarray = $this->getMovement(9, $id, 0);
-            if (!empty($advarray)) {
-                $movingunits['hero'] += 1;
-            }
-            return $movingunits;
-        } else {
+        $vinfo = $this->getVillage($villageID);
+
+        if (!isset($vinfo->user_id)) {
             return [];
+        }
+
+        $vtribe = $this->getUserField($vinfo->user_id, 'tribe_id', 0);
+        $movingunits = $this->initializeMovingUnitsArray($vtribe);
+        $this->calculateOutgoingUnits($vtribe, $villageID, $movingunits);
+        $this->calculateReturningUnits($vtribe, $villageID, $movingunits);
+        $this->calculateSettlerUnits($vtribe, $villageID, $movingunits);
+        $this->calculateAdventurerUnits($movingunits, $villageID);
+
+        return $movingunits;
+    }
+
+    private function initializeMovingUnitsArray($tribe_id) {
+        $movingunits = [];
+        for ($i = 1; $i <= 10; $i++) {
+            $movingunits['u' . (($tribe_id - 1) * 10 + $i)] = 0;
+        }
+        $movingunits['hero'] = 0;
+        return $movingunits;
+    }
+
+    private function calculateOutgoingUnits($tribe_id, $villageID, &$movingunits) {
+        $outgoingarray = $this->getMovement(3, $villageID, 0);
+        if (!empty($outgoingarray)) {
+            foreach ($outgoingarray as $out) {
+                for ($i = 1; $i <= 10; $i++) {
+                    $movingunits['u' . (($tribe_id - 1) * 10 + $i)] += $out["t{$i}"];
+                }
+                $movingunits['hero'] += $out->t11;;
+            }
+        }
+    }
+
+    private function calculateReturningUnits($tribe_id, $villageID, &$movingunits) {
+        $returning = $this->getMovement(4, $villageID, 1);
+        if (!empty($returning)) {
+            foreach ($returning as $ret) {
+                if ($ret->attack_type != 1) {
+                    for ($i = 1; $i <= 10; $i++) {
+                        $movingunits['u' . (($tribe_id - 1) * 10 + $i)] += $ret->{"t{$i}"};
+                    }
+                    $movingunits['hero'] += $ret->t11;
+                }
+            }
+        }
+    }
+
+    private function calculateSettlerUnits($tribe_id, $villageID, &$movingunits) {
+        $settlerarray = $this->getMovement(5, $villageID, 0);
+        if (!empty($settlerarray)) {
+            $movingunits['u' . ($tribe_id * 10)] += 3 * count($settlerarray);
+        }
+    }
+
+    private function calculateAdventurerUnits(&$movingunits, $villageID) {
+        $advarray = $this->getMovement(9, $villageID, 0);
+        if (!empty($advarray)) {
+            $movingunits['hero'] += 1;
         }
     }
 
@@ -2855,47 +2875,45 @@ class DatabaseGame
      */
     public function getMovement($type, $village, $mode)
     {
-        $where = !$mode ? '`from`' : '`to`';
+        $where = !$mode ? 'from' : 'to';
+
+        $query = DB::table('movements')->where($where, $village)->where('proc', 0);
 
         switch ($type) {
             case 0:
             case 1:
-                $additionalJoin = 'JOIN send ON movement.ref = send.id';
-                $sortTypeCondition = "movement.sort_type = {$type}";
+                $query->join('sends', 'movements.ref', '=', 'sends.id')
+                    ->where('movements.sort_type', $type);
                 break;
             case 2:
             case 5:
             case 9:
-                $additionalJoin = '';
-                $sortTypeCondition = "movement.sort_type = {$type}";
+                $query->where('movements.sort_type', $type);
                 break;
             case 3:
             case 4:
-                $additionalJoin = 'JOIN attacks ON movement.ref = attacks.id';
-                $sortTypeCondition = "movement.sort_type = {$type}";
-                $orderBy = 'ORDER BY endtime ASC';
+                $query->join('attacks', 'movements.ref', '=', 'attacks.id')
+                    ->where('movements.sort_type', $type)
+                    ->orderBy('end_time', 'ASC');
                 break;
             case 6:
-                $additionalJoin = 'JOIN odata ON movement.to = odata.wref JOIN attacks ON movement.ref = attacks.id';
-                $sortTypeCondition = 'movement.sort_type = 3';
-                $whereCondition = "odata.conqured = {$village}";
-                $orderBy = 'ORDER BY endtime ASC';
+                $query->join('oases', 'oases.world_id', '=', 'movements.to')
+                    ->join('attacks', 'movements.ref', '=', 'attacks.id')
+                    ->where('oases.is_conquered', $village)
+                    ->where('movements.sort_type', 3)
+                    ->orderBy('end_time', 'ASC');
                 break;
             case 34:
-                $additionalJoin = 'JOIN attacks ON movement.ref = attacks.id';
-                $sortTypeCondition = '(movement.sort_type = 3 OR movement.sort_type = 4)';
-                $orderBy = 'ORDER BY endtime ASC';
+                $query->join('attacks', 'movements.ref', '=', 'attacks.id')
+                    ->where('movements.proc', 0)
+                    ->where(function($query) {
+                        $query->where('movements.sort_type', 3)
+                            ->orWhere('movements.sort_type', 4);
+                    })
+                    ->orderBy('end_time', 'ASC');
                 break;
-            default:
-                throw new \InvalidArgumentException('Invalid type: ' . $type);
         }
-
-        $whereCondition = $whereCondition ?? "movement.$where = $village";
-        $orderBy = $orderBy ?? '';
-
-        $query = "SELECT * FROM movement $additionalJoin WHERE $whereCondition AND movement.proc = 0 AND $sortTypeCondition $orderBy";
-
-        return $this->conn->executeQuery($query)->fetchAll(\PDO::FETCH_ASSOC);
+        return $query->get();
     }
 
     public function getVillageMovementArray($id)
@@ -2972,7 +2990,7 @@ class DatabaseGame
 
     public function getTrainingList()
     {
-        return $this->conn->select('`id`,`vref`,`unit`,`eachtime`,`endat`,`commence`,`amt`')
+        return $this->conn->select('id,vref,unit,eachtime,endat,commence,amt')
             ->from('training')
             ->where('amt != 0')
             ->limit(500)
@@ -3066,21 +3084,21 @@ class DatabaseGame
             }
         }
 
-        $result4 = $this->conn->select('(u10+u20+u30)')->from('enforcement')->where('`from` = :from', ['from' => $village->wid])->get();
+        $result4 = $this->conn->select('(u10+u20+u30)')->from('enforcement')->where('from = :from', ['from' => $village->wid])->get();
         if (!empty($result4)) {
             foreach ($result4 as $reinf) {
                 $settlers += $reinf[0];
             }
         }
 
-        $result5 = $this->conn->select('(u10+u20+u30)')->from('trapped')->where('`from` = :from', ['from' => $village->wid])->get();
+        $result5 = $this->conn->select('(u10+u20+u30)')->from('trapped')->where('from = :from', ['from' => $village->wid])->get();
         if (!empty($result5)) {
             foreach ($result5 as $trapped) {
                 $settlers += $trapped[0];
             }
         }
 
-        $result6 = $this->conn->select('(u9+u19+u29)')->from('enforcement')->where('`from` = :from', ['from' => $village->wid])->get();
+        $result6 = $this->conn->select('(u9+u19+u29)')->from('enforcement')->where('from = :from', ['from' => $village->wid])->get();
         if (!empty($result6)) {
             foreach ($result6 as $reinf) {
                 $chiefs += $reinf[0];
@@ -3089,7 +3107,7 @@ class DatabaseGame
 
         $result7 = $this->conn->select('(u9+u19+u29)')
             ->from('trapped')
-            ->where('`from` = :from', ['from' => $village->wid])
+            ->where('from = :from', ['from' => $village->wid])
             ->get();
 
         if (!empty($result7)) {
@@ -3147,7 +3165,7 @@ class DatabaseGame
         if (count($sizes) != 0) {
             $size = ' AND ( FALSE ';
             foreach ($sizes as $s) {
-                $size .= ' OR `artefacts`.`size` = ' . $s . ' ';
+                $size .= ' OR artefacts.size = ' . $s . ' ';
             }
             $size .= ' ) ';
         } else {
@@ -3315,7 +3333,11 @@ class DatabaseGame
 
     public function getLinks($userID)
     {
-        return $this->conn->select('`url`,`name`')->from('links')->where('`userid` = :userid', ['userid' => $userID])->orderByAsc('pos')->get();
+        return DB::table('links')
+            ->select('url', 'name')
+            ->where('user_id', $userID)
+            ->orderBy('position', 'ASC')
+            ->get();
     }
 
     public function removeLinks($id, $userID)
@@ -3411,7 +3433,7 @@ class DatabaseGame
 
     public function getNoticeData($nid)
     {
-        $result = $this->conn->select('`data`')->from('ndata')->where('id = :id', ['id' => $nid])->first();
+        $result = $this->conn->select('data')->from('ndata')->where('id = :id', ['id' => $nid])->first();
         return $result['data'];
     }
 
@@ -3716,12 +3738,12 @@ class DatabaseGame
 
     public function getNewProc($userID)
     {
-        return $this->conn->select('`npw`,`act`')->from('newproc')->where('uid = :uid', ['uid' => $userID])->get();
+        return $this->conn->select('npw,act')->from('newproc')->where('uid = :uid', ['uid' => $userID])->get();
     }
 
     public function checkAdventure($userID, $worldID, $end)
     {
-        return $this->conn->select('`id`')
+        return $this->conn->select('id')
             ->from('adventure')
             ->where('uid = :uid AND wref = :wref AND end = :end', ['uid' => $userID, 'wref' => $worldID, 'end' => $end])
             ->get();
@@ -3741,7 +3763,7 @@ class DatabaseGame
             $where .= ' AND end = :end ';
             $params['end'] = $end;
         }
-        return $this->conn->select('`id`,`dif`')->from('adventure')->where($where, $params)->get();
+        return $this->conn->select('id,dif')->from('adventure')->where($where, $params)->get();
     }
 
     public function editTableField($table, $field, $value, $refField, $ref)
@@ -3752,8 +3774,8 @@ class DatabaseGame
     public function getAllianceDipProfile($aid, $type)
     {
         $allianceLinks = '';
-        $alliances1 = $this->conn->select('`alli2`')->from('diplomacy')->where('alli1 = :alli1 AND type = :type AND accepted = 1', ['alli1' => $aid, 'type' => $type])->get();
-        $alliances2 = $this->conn->select('`alli1`')->from('diplomacy')->where('alli2 = :alli1 AND type = :type AND accepted = 1', ['alli2' => $aid, 'type' => $type])->get();
+        $alliances1 = $this->conn->select('alli2')->from('diplomacy')->where('alli1 = :alli1 AND type = :type AND accepted = 1', ['alli1' => $aid, 'type' => $type])->get();
+        $alliances2 = $this->conn->select('alli1')->from('diplomacy')->where('alli2 = :alli1 AND type = :type AND accepted = 1', ['alli2' => $aid, 'type' => $type])->get();
         if (!empty($alliances1)) {
             foreach ($alliances1 as $alliance1) {
                 $alliance = $this->getAlliance($alliance1['alli2']);
@@ -3775,22 +3797,18 @@ class DatabaseGame
     public function getAlliance($id, $mode = 0)
     {
         $where = '';
-        $params = [];
         switch ($mode) {
             case 0:
-                $where = 'id = :id';
-                $params['id'] = $id;
+                $where = 'id';
                 break;
             case 1:
-                $where = 'name = :name';
-                $params['name'] = $id;
+                $where = 'name';
                 break;
             case 2:
-                $where = 'tag = :tag';
-                $params['tag'] = $id;
+                $where = 'tag';
                 break;
         }
-        return $this->conn->select('`id`,`tag`,`desc`,`max`,`name`,`notice`')->from('alidata')->where($where, $params)->first();
+        return DB::table('alliances')->select('id', 'tag', 'desc', 'max', 'name', 'notice')->where($where, $id)->first();
     }
 
     /** @noinspection PhpInconsistentReturnPointsInspection */
@@ -3944,12 +3962,12 @@ class DatabaseGame
 
     public function getNatarsCapital()
     {
-        return $this->conn->select('`wref`')->from('vdata')->where('owner = 2 AND capital = 1')->orderByAsc('created')->get();
+        return $this->conn->select('wref')->from('vdata')->where('owner = 2 AND capital = 1')->orderByAsc('created')->get();
     }
 
     public function getNatarsWWVillages()
     {
-        return $this->conn->select('`owner`')->from('vdata')->where('owner = 2 AND name = "WW Village"')->orderByAsc('created')->get();
+        return $this->conn->select('owner')->from('vdata')->where('owner = 2 AND name = "WW Village"')->orderByAsc('created')->get();
     }
 
     public function addNatarsVillage($worldID, $userID, $capital)
@@ -3967,7 +3985,7 @@ class DatabaseGame
 
     public function instantTrain($vref)
     {
-        $result = $this->conn->select('`id`')->from('training')->where('vref = :vref', ['vref' => $vref])->first();
+        $result = $this->conn->select('id')->from('training')->where('vref = :vref', ['vref' => $vref])->first();
         $count = count($result);
         $this->conn->upgrade('training', ['commence' => 0, 'eachtime' => 1, 'endat' => 0, 'timestamp' => 0], 'vref = :vref', ['vref' => $vref]);
 
@@ -4018,7 +4036,7 @@ class DatabaseGame
         $owner = $this->getVillage($worldID);
         if (!empty($owner) && isset($owner['owner'])) {
             $conquered = (time() - max(86400 / setting('speed'), 600));
-            $results = $this->conn->select('`vref`,`effect`,`aoe`')
+            $results = $this->conn->select('vref,effect,aoe')
                 ->from('artefacts')
                 ->where('owner = :owner AND effecttype = :type AND status = 1 AND conquered <= :conquered', ['owner' => $owner['owner'], 'type' => $type, 'conquered' => $conquered])
                 ->orderByDesc('conquered')
@@ -4045,7 +4063,7 @@ class DatabaseGame
     public function updateFoolArtes()
     {
         $conquered = (time() - max(86400 / setting('speed'), 600));
-        $results = $this->conn->select('`id`,`size`')
+        $results = $this->conn->select('id,size')
             ->from('artefacts')
             ->where("type = 3 AND status = 1 AND conquered <= $conquered AND lastupdate <= $conquered")
             ->get();
@@ -4161,7 +4179,7 @@ class DatabaseGame
     {
         $artEff = 0;
         $userAlli = $this->getUserField($userID, 'alliance', 0);
-        $diplos = $this->conn->select('`alli1`,`alli2`')->from('diplomacy')->where('alli1 = :alli1 OR alli2 = :alli2 AND accepted <> 0', ['alli1' => $userAlli, 'alli2' => $userAlli])->get();
+        $diplos = $this->conn->select('alli1,alli2')->from('diplomacy')->where('alli1 = :alli1 OR alli2 = :alli2 AND accepted <> 0', ['alli1' => $userAlli, 'alli2' => $userAlli])->get();
 
         if (!empty($diplos) && count($diplos) > 0) {
             $alliances = [];
@@ -4172,7 +4190,7 @@ class DatabaseGame
             $alliances = array_unique($alliances);
             $alliancestr = implode(',', $alliances);
 
-            $mate = $this->conn->select('`id`')
+            $mate = $this->conn->select('id')
                 ->from('users')
                 ->where('alliance IN :alliance AND id <> :id', ['alliance' => $alliancestr, 'id' => $userID])
                 ->get();
@@ -4183,7 +4201,7 @@ class DatabaseGame
                 }
                 $matestr = implode(',', $ml);
 
-                $result = $this->conn->select('`id`')->from('artefacts')->where('owner IN (:owner) AND effecttype = 11 AND status = 1 AND conquered <= :conquered', ['owner' => $matestr, 'conquered' => (time() - max(86400 / setting('speed'), 600))])->orderByDesc('conquered')->get();
+                $result = $this->conn->select('id')->from('artefacts')->where('owner IN (:owner) AND effecttype = 11 AND status = 1 AND conquered <= :conquered', ['owner' => $matestr, 'conquered' => (time() - max(86400 / setting('speed'), 600))])->orderByDesc('conquered')->get();
                 if (!empty($result) && count($result) > 0) {
                     return $artEff = 1;
                 }
@@ -4211,7 +4229,7 @@ class DatabaseGame
 
     public function resendact($mail)
     {
-        return $this->conn->select('`id`, `username`, `email`, `password`')
+        return $this->conn->select('id, username, email, password')
             ->from('users')
             ->where('email = :email', ['email' => $mail])
             ->limit(0, 1)
@@ -4297,7 +4315,7 @@ class DatabaseGame
 
     public function getAttackCasualties($time)
     {
-        $generals = $this->conn->select('`time`')->from('general')->where('shown = 1')->get();
+        $generals = $this->conn->select('time')->from('general')->where('shown = 1')->get();
         $casualties = 0;
         foreach ($generals as $general) {
             if (date('j. M', $time) == date('j. M', $general['time'])) {
@@ -4309,7 +4327,7 @@ class DatabaseGame
 
     public function getAttackByDate($time)
     {
-        $generals = $this->conn->select('`time`')->from('general')->where('shown = 1')->get();
+        $generals = $this->conn->select('time')->from('general')->where('shown = 1')->get();
         $attack = 0;
         foreach ($generals as $general) {
             if (date('j. M', $time) == date('j. M', $general['time'])) {
@@ -4377,7 +4395,7 @@ class DatabaseGame
 
     public function getTradeRouteUid($id)
     {
-        $result = $this->conn->select('`uid`')->from('route')->where('id = :id', ['id' => $id])->first();
+        $result = $this->conn->select('uid')->from('route')->where('id = :id', ['id' => $id])->first();
         return $result['uid'];
     }
 
@@ -4394,38 +4412,38 @@ class DatabaseGame
 
     public function getHeroData($userID)
     {
-        return $this->conn->select()->from('hero')->where('uid = :uid', ['uid' => $userID])->first();
+        return DB::table('heroes')->where('user_id', $userID)->first();
     }
 
     public function getHeroData2($userID)
     {
-        return $this->conn->select('heroid')
-            ->from('hero')
-            ->where('dead = 0 AND uid = :uid', ['uid' => $userID])
-            ->limit(0, 1)
+        return DB::table('heroes')
+            ->select('id')
+            ->where('dead',0)
+            ->where('user_id', $userID)
             ->first();
     }
 
     public function getHeroInVillid($userID, $mode)
     {
         $name = '';
-        $villages = $this->conn->select('`wref`, `name`')
-            ->from('vdata')
-            ->where('owner = :owner', ['owner' => $userID])
-            ->orderByDesc('owner')
+        $villages = DB::table('villages')
+            ->select('world_id', 'name')
+            ->where('user_id', $userID)
+            ->orderByDesc('user_id')
             ->get();
 
         foreach ($villages as $village) {
-            $unit = $this->conn->select('`hero`')
-                ->from('units')
-                ->where('vref = :vref', ['vref' => $village['wref']])
-                ->orderByDesc('vref')
+            $unit = DB::table('units')
+                ->select('hero')
+                ->where('world_id', $village->world_id)
+                ->orderByDesc('world_id')
                 ->first();
 
-            if ($unit['hero'] == 1) {
-                $name = $mode ? $village['name'] : $village['wref'];
+            if ($unit && $unit->hero == 1) {
+                $name = $mode ? $village->name : $village->world_id;
+                break; // If you found a hero, you can stop the loop.
             }
-
         }
         return $name;
     }
