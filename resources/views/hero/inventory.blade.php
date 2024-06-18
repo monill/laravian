@@ -315,7 +315,7 @@ if ($_SESSION['qst'] == 5) {
 
             <div id="center">
                 <a id="ingameManual" href="help">
-                    <img class="question" alt="Help" src="/assets/images/x.gif">
+                    <img class="question" alt="Help" src="{{ Vite::asset('resources/images/x.gif') }}">
                 </a>
 
                 <div id="sidebarBeforeContent" class="sidebar beforeContent">
