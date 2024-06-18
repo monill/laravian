@@ -145,7 +145,7 @@ if (isset($_POST['h']) && $_POST['a'] == 'adventure') {
 
             <div id="center">
                 <a id="ingameManual" href="help.php">
-                    <img class="question" alt="Help" src="/assets/images/x.gif">
+                    <img class="question" alt="Help" src="{{ Vite::asset('resources/images/x.gif') }}">
                 </a>
 
                 <div id="sidebarBeforeContent" class="sidebar beforeContent">
