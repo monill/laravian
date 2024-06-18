@@ -58,20 +58,20 @@ $getface = $herodetail['face'];
 if ($gender == 0) $getface %= 5;
 
 // USAGE EXAMPLE:
-$body = imagecreatefrompng('/assets/images/hero/' . $gdir . '/head/' . $size . '/face0.png');
+$body = imagecreatefrompng('..//images/hero/' . $gdir . '/head/' . $size . '/face0.png');
 if ($getbeard != 5) {
-    $beard = imagecreatefrompng('/assets/images/hero/' . $gdir . '/head/' . $size . '/beard/beard' . $getbeard . '-' . $color . '.png');
+    $beard = imagecreatefrompng('..//images/hero/' . $gdir . '/head/' . $size . '/beard/beard' . $getbeard . '-' . $color . '.png');
 }
-$eye = imagecreatefrompng('/assets/images/hero/' . $gdir . '/head/' . $size . '/eye/eye' . $geteye . '.png');
-$eyebrow = imagecreatefrompng('/assets/images/hero/' . $gdir . '/head/' . $size . '/eyebrow/eyebrow' . $geteyebrow . (($gender == 0) ? '-' . $color : '') . '.png');
+$eye = imagecreatefrompng('..//images/hero/' . $gdir . '/head/' . $size . '/eye/eye' . $geteye . '.png');
+$eyebrow = imagecreatefrompng('..//images/hero/' . $gdir . '/head/' . $size . '/eyebrow/eyebrow' . $geteyebrow . (($gender == 0) ? '-' . $color : '') . '.png');
 if (!($gender == 0 && $gethair == 5)) {
-    $hair = imagecreatefrompng('/assets/images/hero/' . $gdir . '/head/' . $size . '/hair/hair' . $gethair . '-' . $color . '.png');
+    $hair = imagecreatefrompng('..//images/hero/' . $gdir . '/head/' . $size . '/hair/hair' . $gethair . '-' . $color . '.png');
 }
 
-$ear = imagecreatefrompng('/assets/images/hero/' . $gdir . '/head/' . $size . '/ear/ear' . $getear . '.png');
-$mouth = imagecreatefrompng('/assets/images/hero/' . $gdir . '/head/' . $size . '/mouth/mouth' . $getmouth . '.png');
-$nose = imagecreatefrompng('/assets/images/hero/' . $gdir . '/head/' . $size . '/nose/nose' . $getnose . '.png');
-$face = imagecreatefrompng('/assets/images/hero/' . $gdir . '/head/' . $size . '/face/face' . $getface . '.png');
+$ear = imagecreatefrompng('..//images/hero/' . $gdir . '/head/' . $size . '/ear/ear' . $getear . '.png');
+$mouth = imagecreatefrompng('..//images/hero/' . $gdir . '/head/' . $size . '/mouth/mouth' . $getmouth . '.png');
+$nose = imagecreatefrompng('..//images/hero/' . $gdir . '/head/' . $size . '/nose/nose' . $getnose . '.png');
+$face = imagecreatefrompng('..//images/hero/' . $gdir . '/head/' . $size . '/face/face' . $getface . '.png');
 
 // SAME COMMANDS:
 if ($gethair != 5) {
