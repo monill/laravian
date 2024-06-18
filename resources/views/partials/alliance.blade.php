@@ -1,16 +1,4 @@
-<?php
-$aid = $session->alliance;
-$allianceinfo = $database->getAlliance($aid);
-for ($t = 19; $t <= 40; $t++) {
-    if ($village->resarray['f' . $t . 't'] == 18) {
-        $to = $t;
-        $x = 1;
-        break;
-    }
-}
-?>
-
-<div id="sidebarBoxAlliance" class="sidebarBox ">
+<div id="sidebarBoxAlliance" class="sidebarBox">
     <div class="sidebarBoxBaseBox">
         <div class="baseBox baseBoxTop">
             <div class="baseBox baseBoxBottom">
@@ -19,10 +7,8 @@ for ($t = 19; $t <= 40; $t++) {
         </div>
     </div>
     <div class="sidebarBoxInnerBox">
-        <div class="innerBox header ">
-            <button type="button" id="button5225ee283d5ac" class="layoutButton embassyWhite green <?php if ($x == 0) echo 'disabled'; ?> " onclick="return false;" title="<?php if ($x == 0) {
-                echo AL_AUCTION . '<br />' . AL_CONSTEMBASY;
-            } ?>">
+        <div class="innerBox header">
+            <button type="button" id="button5225ee283d5ac" class="layoutButton embassyWhite green {{ $allianceInfo == null ? 'disabled' : '' }}" onclick="return false;" title="Auction || Loading... Build Alliance.">
                 <div class="button-container addHoverClick">
                     <img src="/assets/images/x.gif" alt="">
                 </div>
@@ -51,18 +37,14 @@ for ($t = 19; $t <= 40; $t++) {
                             "speechBubble": "",
                             "class": "",
                             "id": "button5225ee283d5ac",
-                            "redirectUrl": "<?php if ($x != 0) echo 'build.php?id=' . $to; ?>",
+                            "redirectUrl": "build.php?id=18",
                             "redirectUrlExternal": ""
                         }]);
                     });
                 }
             </script>
-            <button type="button" id="button5225ee283d789" class="layoutButton allianceForumWhite green <?php if ($aid == 0) echo 'disabled'; ?> " onclick="return false;" title="<?php echo AL_ALLYFORUM;
-            if ($aid == 0) {
-                echo AL_NOALLY;
-            } else {
-                echo $allianceinfo['tag'];
-            } ?>">
+
+            <button type="button" id="button5225ee283d789" class="layoutButton allianceForumWhite green {{ $allianceInfo == null ? 'disabled' : '' }}" onclick="return false;" title="Check Alliance || {{ $allianceInfo == null ? "You're not in alliance" : $allianceInfo['tag'] }}">
                 <div class="button-container addHoverClick">
                     <img src="/assets/images/x.gif" alt="">
                 </div>
@@ -80,19 +62,14 @@ for ($t = 19; $t <= 40; $t++) {
                             "speechBubble": "",
                             "class": "",
                             "id": "button5225ee283d789",
-                            "redirectUrl": "<?php if ($aid > 0) echo 'allianz.php?s=2'; ?>",
+                            "redirectUrl": "{{ $allianceInfo > 0 ?? 'allianz.php?s=2' }}",
                             "redirectUrlExternal": ""
                         }]);
                     });
                 }
             </script>
-            <button type="button" id="button5225ee283d8f8" class="layoutButton overviewWhite green <?php if ($aid == 0) echo 'disabled'; ?> " onclick="return false;" title="<?php echo AL_ALLYOVER;
-            if ($aid == 0) {
-                echo AL_NOALLY;
-            } else {
-                echo $allianceinfo['tag'];
-            } ?>">
-                <div class="button-container addHoverClick ">
+            <button type="button" id="button5225ee283d8f8" class="layoutButton overviewWhite green {{ $allianceInfo == null ? 'disabled' : '' }}" onclick="return false;" title="Check Alliance || {{ $allianceInfo == null ? "'You're not in alliance'" : $allianceInfo['tag'] }}">
+                <div class="button-container addHoverClick">
                     <img src="/assets/images/x.gif" alt="">
                 </div>
             </button>
@@ -109,7 +86,7 @@ for ($t = 19; $t <= 40; $t++) {
                             "speechBubble": "",
                             "class": "",
                             "id": "button5225ee283d8f8",
-                            "redirectUrl": "<?php if ($aid > 0) echo 'allianz.php'; ?>",
+                            "redirectUrl": "{{ $allianceInfo > 0 ?? 'allianz.php' }}",
                             "redirectUrlExternal": ""
                         }]);
                     });
@@ -118,14 +95,17 @@ for ($t = 19; $t <= 40; $t++) {
             <div class="clear"></div>
 
             <div class="boxTitle">
-                <?php
-                if (isset($aid) && $aid > 0) {
-                    $allianceinfo = $database->getAlliance($aid);
-                    echo '<a class=signLink href=allianz.php title=' . AL_ALLIANCE . ' ' . $allianceinfo['tag'] . '><span class=wrap>' . $allianceinfo['tag'] . '</span></a><a href="allianz.php?s=2" class="crest" title=' . AL_TOALLYFORUM . '><img src=/assets/images/x.gif></a>';
-                } else {
-                    echo AL_NOALLY;
-                }
-                ?> </div>
+                @if($allianceInfo)
+                    <a class="signLink" href="allianz.php" title="Alliance {{ $allianceInfo['tag'] }}">
+                        <span class="wrap">{{ $allianceInfo['tag'] }}</span>
+                    </a>
+                    <a href="allianz.php?s=2" class="crest" title="Alliance Forum">
+                        <img src="/assets/images/x.gif">
+                    </a>
+                @else
+                    <p>You're not in alliance</p>
+                @endif
+            </div>
         </div>
         <div class="innerBox content"></div>
         <div class="innerBox footer"></div>
