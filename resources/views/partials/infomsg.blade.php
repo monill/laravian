@@ -210,7 +210,7 @@ if ($golds['protect'] > $_SERVER['REQUEST_TIME']) {
             <div class="boxTitle">Advertisement</div>
             <span class="messageShortInfo">
                 <?php echo $total; ?>
-                <img class="messages" src="/assets/images/x.gif" alt="<?php echo IM_TOTMSG . $total; ?>" title="<?php echo IM_TOTMSG . $total; ?>" />
+                <img class="messages" src="{{ Vite::asset('resources/images/x.gif') }}" alt="<?php echo IM_TOTMSG . $total; ?>" title="<?php echo IM_TOTMSG . $total; ?>" />
             </span>
         </div>
         <div class="innerBox content">
