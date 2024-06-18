@@ -12,5 +12,5 @@
         <a href="#">TERMS</a>
         <a class="flink" href="#">RULES</a>
     </div>
-    <p class="copyright">copyright {{ date('Y') }}&nbsp;</p>
+    <p class="copyright">Copyright &copy; {{ date('Y') }}&nbsp;</p>
 </div>
