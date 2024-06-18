@@ -10,7 +10,7 @@
 
             <div id="center">
                 <a id="ingameManual" href="help">
-                    <img class="question" alt="Help" src="/assets/images/x.gif">
+                    <img class="question" alt="Help" src="..//images/x.gif">
                 </a>
 
                 <div id="sidebarBeforeContent" class="sidebar beforeContent">
