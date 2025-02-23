@@ -139,9 +139,7 @@ class InstallTableSeeder extends Seeder
 
     public function createMultihunter($game)
     {
-        $password = '123456789';
-
-        $this->insertUsers($password);
+        $this->insertUsers('123456789');
         $this->setupVillages($game->getWref(1, 0), 4, 'Multihunter', 1, $game);
         $this->setupVillages($game->getWref(0, 0), 2, '1', 0, $game);
 
